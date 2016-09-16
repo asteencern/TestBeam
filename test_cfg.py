@@ -6,13 +6,13 @@ import os,sys
 options = VarParsing.VarParsing('standard') # avoid the options: maxEvents, files, secondaryFiles, output, secondaryOutput because they are already defined in 'standard'
 
 options.register('dataFolder',
-                 '/afs/cern.ch/work/r/rslu/public/HGC_TB_data_Sep2016/',
+                 '/afs/cern.ch/work/a/asteen/public/data/sep2016',
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.string,
                  'folder containing raw text input')
 
 options.register('outputFolder',
-                 '/tmp/',
+                 '/afs/cern.ch/work/a/asteen/public/data/resultRoot/sep2016',
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.string,
                  'Result of processing')
@@ -123,8 +123,10 @@ process.output = cms.OutputModule("PoolOutputModule",
 # process.TFileService = cms.Service("TFileService", fileName = cms.string("HGC_Output_6_Reco_Display.root") )
 if (options.chainSequence == 1):
     process.TFileService = cms.Service("TFileService", fileName = cms.string("%s/%s_Output_%06d_Digi.root"%(options.outputFolder,options.runType,options.runNumber)))
-elif (options.chainSequence == 3 or options.chainSequence == 4 or options.chainSequence == 5):
+elif (options.chainSequence == 2 or options.chainSequence == 6):
     process.TFileService = cms.Service("TFileService", fileName = cms.string("%s/%s_Output_%06d_Reco.root"%(options.outputFolder,options.runType,options.runNumber)))
+elif (options.chainSequence == 3 or options.chainSequence == 4 or options.chainSequence == 5):
+    process.TFileService = cms.Service("TFileService", fileName = cms.string("%s/%s_Output_%06d_Displays.root"%(options.outputFolder,options.runType,options.runNumber)))
 # process.TFileService = cms.Service("TFileService", fileName = cms.string("HGC_Output_6_Reco.root") )
 #process.TFileService = cms.Service("TFileService", fileName = cms.string("HGC_Output_6_Reco_Layer.root") )
 #process.TFileService = cms.Service("TFileService", fileName = cms.string("HGC_Output_6_Reco_Cluster.root") )
@@ -147,11 +149,15 @@ elif (options.chainSequence == 3 or options.chainSequence == 4 or options.chainS
 
 if (options.chainSequence == 1):
     process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbdigisplotter)
+elif (options.chainSequence == 2):
+    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.LayerSumAnalyzer)
 elif (options.chainSequence == 3):
     process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbrechitsplotter_highgain_correlation_cm)
 elif (options.chainSequence == 4):
     process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbrechitsplotter_highgain_new)
 elif (options.chainSequence == 5):
     process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbrechitsplotter_highgain_correlation_cm*process.hgcaltbrechitsplotter_highgain_new)
+elif (options.chainSequence == 6):
+    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcalclusteringexample)
 
 process.end = cms.EndPath(process.output)
