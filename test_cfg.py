@@ -48,13 +48,13 @@ options.register('nSpills',
                  'Number of spills in run')
 
 options.register('pedestalsHighGain',
-                 'CondObjects/data/Ped_HighGain_L8.txt',
+                 '/afs/cern.ch/user/a/asteen/cmssw/CMSSW_8_0_1/src/HGCal/CondObjects/data/Ped_HighGain_L8.txt',
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.string,
                  'Path to high gain pedestals file')
 
 options.register('pedestalsLowGain',
-                 'CondObjects/data/Ped_LowGain_L8.txt',
+                 '/afs/cern.ch/user/a/asteen/cmssw/CMSSW_8_0_1/src/HGCal/CondObjects/data/Ped_LowGain_L8.txt',
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.string,
                  'Path to low gain pedestals file')
