@@ -59,6 +59,13 @@ options.register('pedestalsLowGain',
                  VarParsing.VarParsing.varType.string,
                  'Path to low gain pedestals file')
 
+#options.register('electronicsMap',
+#                 '/afs/cern.ch/user/a/asteen/cmssw/CMSSW_8_0_1/src/HGCal/CondObjects/data/map_CERN_8Layers_Sept2016.txt',
+#                 VarParsing.VarParsing.multiplicity.singleton,
+#                 VarParsing.VarParsing.varType.string,
+#                 'Path to low electronic map')
+#
+
 options.output = "test_output.root"
 
 options.parseArguments()
