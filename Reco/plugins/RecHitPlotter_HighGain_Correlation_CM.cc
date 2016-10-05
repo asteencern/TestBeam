@@ -58,7 +58,7 @@ using namespace std;
 // This will improve performance in multithreaded jobs.
 
 static const double delta = 0.00001;//Add/subtract delta = 0.00001 to x,y of a cell centre so the TH2Poly::Fill doesnt have a problem at the edges where the centre of a half-hex cell passes through the sennsor boundary line.
-bool doCommonMode_CM = 0;
+bool doCommonMode_CM = 1;
 double return_RMS_CM(double mean_sq, double mean)
 {
   return sqrt(mean_sq - mean * mean);
