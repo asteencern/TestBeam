@@ -1,4 +1,5 @@
 #include "HGCal/Reco/plugins/HGCalTBRecHitProducer.h"
+#include <iostream>
 
 HGCalTBRecHitProducer::HGCalTBRecHitProducer(const edm::ParameterSet& cfg)
 	: outputCollectionName(cfg.getParameter<std::string>("OutputCollectionName")),
@@ -64,8 +65,11 @@ void HGCalTBRecHitProducer::produce(edm::Event& event, const edm::EventSetup& iS
 			float energyLow = digi[iSample].adcLow() - pedestal_low_value * adcToGeV_low_value;
 			float energyHigh = digi[iSample].adcHigh() - pedestal_high_value * adcToGeV_high_value;
 
-			HGCalTBRecHit recHit(digi.detid(), energyLow, energyHigh, digi[iSample].tdc()); ///\todo use time calibration!
-
+			HGCalTBRecHit recHit;
+			if( digi[iSample].adcHigh()!=0 )
+			  recHit=HGCalTBRecHit(digi.detid(), energyLow, energyHigh, digi[iSample].tdc()); ///\todo use time calibration!
+			else 
+			  recHit=HGCalTBRecHit(digi.detid(), 0., 0., digi[iSample].tdc()); ///\todo use time calibration!
 #ifdef DEBUG
 			std::cout << recHit << std::endl;
 #endif

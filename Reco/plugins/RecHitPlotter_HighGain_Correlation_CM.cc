@@ -182,7 +182,7 @@ RecHitPlotter_HighGain_Correlation_CM::RecHitPlotter_HighGain_Correlation_CM(con
       for(int Channel = 0; Channel < 64; Channel++) {
 	sprintf(name, "Ski_%i_Channel_%i_Layer_%i", ISkiroc+1, Channel, ILayer);
 	sprintf(title, "Ski %i Channel %i Layer %i", ISkiroc+1, Channel, ILayer);
-	h_digi_layer_channel[ISkiroc][Channel][ILayer] = fs->make<TH1F>(name, title, 6000, -500., 5500.);
+	h_digi_layer_channel[ISkiroc][Channel][ILayer] = fs->make<TH1F>(name, title, 60000, -500., 5500.);
 	std::vector<double> vec;
 	channelADCMapVec[ ILayer*1000 + ISkiroc*100 + Channel ]=vec;
 	channelADCMap[ ILayer*1000 + ISkiroc*100 + Channel ]=0.0;
@@ -299,7 +299,8 @@ RecHitPlotter_HighGain_Correlation_CM::analyze(const edm::Event& event, const ed
     //h->event=((event.id()).event() - 1) % EVENTSPERSPILL + EVENTSPERSPILL * SPILL;
     //			  
     if(!doCommonMode_CM) {
-      h_digi_layer_channel[ (eid.iskiroc() - 1)%nSkirocsPerLayer ][eid.ichan()][(RecHit.id()).layer() - 1]->Fill(RecHit.energyHigh());
+      if( RecHit.energyHigh()!=0 )
+	h_digi_layer_channel[ (eid.iskiroc() - 1)%nSkirocsPerLayer ][eid.ichan()][(RecHit.id()).layer() - 1]->Fill(RecHit.energyHigh());
       Noise_2D_Profile->Fill((64 * (eid.iskiroc() - 1) + eid.ichan()), RecHit.energyHigh());
       channelADCMapVec[ key ].push_back( RecHit.energyHigh() );
     }
@@ -318,7 +319,8 @@ RecHitPlotter_HighGain_Correlation_CM::analyze(const edm::Event& event, const ed
       else if(((RecHit.id()).cellType() == 3) && (((RecHit.id()).iu() == -4 && (RecHit.id()).iv() == 6) || ((RecHit.id()).iu() == -2 && (RecHit.id()).iv() == 6) || ((RecHit.id()).iu() == 4 && (RecHit.id()).iv() == -7) || ((RecHit.id()).iu() == 2 && (RecHit.id()).iv() == -6))) 
 	energy = RecHit.energyHigh() - (Average_Pedestal_Per_Event_Merged_Cell[(RecHit.id()).layer() - 1] / (Cell_counter_Merged_Cell[(RecHit.id()).layer() - 1]));
       
-      h_digi_layer_channel[ (eid.iskiroc() - 1)%nSkirocsPerLayer ][eid.ichan()][(RecHit.id()).layer() - 1]->Fill(energy);
+      if( RecHit.energyHigh()!=0 )
+	h_digi_layer_channel[ (eid.iskiroc() - 1)%nSkirocsPerLayer ][eid.ichan()][(RecHit.id()).layer() - 1]->Fill(energy);
       channelADCMapVec[ key ].push_back( energy );
       Noise_2D_Profile->Fill((64 * (eid.iskiroc() - 1) + eid.ichan()), RecHit.energyHigh() - (Average_Pedestal_Per_Event_Full[(RecHit.id()).layer() - 1] / (Cell_counter[(RecHit.id()).layer() - 1])));
     }
