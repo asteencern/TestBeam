@@ -129,6 +129,9 @@ private:
   TH1F* AllCells_CM;
   TH2F* Noise_2D_Profile;
   char name[50], title[50];
+  
+  std::vector<int> cellNotUseForCM_Ski1;
+  std::vector<int> cellNotUseForCM_Ski2;
 };
 
 //
@@ -190,6 +193,16 @@ RecHitPlotter_HighGain_Correlation_CM::RecHitPlotter_HighGain_Correlation_CM(con
       }
     }
   }
+
+  int thecells1[]={2,4,6,7,8,10,12,16,18,20,22,24,30,32,34,36};
+  for(unsigned int i=0; i<sizeof(thecells1)/sizeof(int); i++)
+    cellNotUseForCM_Ski1.push_back( thecells1[i] );
+  int thecells2[]={12,22,24,26,28,30,36,38,42,44,46,52};
+  for(unsigned int i=0; i<sizeof(thecells2)/sizeof(int); i++)
+    cellNotUseForCM_Ski2.push_back( thecells2[i] );
+
+  std::cout << "cellNotUseForCM_Ski1.size() = " << cellNotUseForCM_Ski1.size() << std::endl;
+  std::cout << "cellNotUseForCM_Ski2.size() = " << cellNotUseForCM_Ski2.size() << std::endl;
 }//contructor ends here
 
 
@@ -243,6 +256,10 @@ RecHitPlotter_HighGain_Correlation_CM::analyze(const edm::Event& event, const ed
     CellCentreXY = TheCell.GetCellCentreCoordinatesForPlots((RecHit1.id()).layer(), (RecHit1.id()).sensorIU(), (RecHit1.id()).sensorIV(), (RecHit1.id()).iu(), (RecHit1.id()).iv(), sensorsize);
     uint32_t EID = essource_.emap_.detId2eid(RecHit1.id());
     HGCalTBElectronicsId eid(EID);
+    if( (eid.iskiroc()-1)%nSkirocsPerLayer==0 && std::find(cellNotUseForCM_Ski1.begin(),cellNotUseForCM_Ski1.end(),eid.ichan())!=cellNotUseForCM_Ski1.end() )
+		  continue;
+    if( (eid.iskiroc()-1)%nSkirocsPerLayer==1 && std::find(cellNotUseForCM_Ski2.begin(),cellNotUseForCM_Ski2.end(),eid.ichan())!=cellNotUseForCM_Ski2.end() )
+		  continue;
     //                if((eid.iskiroc()%2 == 1) && (eid.ichan() == 0 || eid.ichan() == 1 )) continue;
     //             double iux = (CellCentreXY.first < 0 ) ? (CellCentreXY.first + delta) : (CellCentreXY.first - delta) ;
     //             double iyy = (CellCentreXY.second < 0 ) ? (CellCentreXY.second + delta) : (CellCentreXY.second - delta);
@@ -272,7 +289,6 @@ RecHitPlotter_HighGain_Correlation_CM::analyze(const edm::Event& event, const ed
     }
 
   }
-
 
   for(int iii = 0; iii < MAXLAYERS; iii++) {
     if(Cell_counter[iii] != 0) Full_Cell[iii]->Fill(Average_Pedestal_Per_Event_Full[iii] / Cell_counter[iii]);
