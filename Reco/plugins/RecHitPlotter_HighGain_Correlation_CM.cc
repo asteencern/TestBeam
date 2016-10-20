@@ -109,7 +109,6 @@ private:
   int Sensor_Iv = 0;
   int SPILL;
   int evtID;
-  int nevent;
 
   TH1F* Full_Cell[MAXLAYERS];
   TH1F* Half_Cell[MAXLAYERS];
@@ -119,9 +118,14 @@ private:
   TH1F  *h_digi_layer_channel[nSkirocsPerLayer][64][nlayers];
   
   TTree* tree;
+  float meanx;
+  float meany;
+  float rmsx;
+  float rmsy;
+  float energySum;
+  int layer;
+  int nhit;
   //std::vector<HGCalTBHitInfo*> hitInfo;
-  std::map<int, double > channelADCMap;
-  std::map<int, std::vector<double> > channelADCMapVec;
   //TH2F  *h_digi_layer_channel_vs_eventid[nSkirocsPerLayer][64];
   //        TH2F  *h_digi_layer_channel_CM[2][64];
   TH1F* Sum_Cluster_ADC;
@@ -148,7 +152,7 @@ private:
 RecHitPlotter_HighGain_Correlation_CM::RecHitPlotter_HighGain_Correlation_CM(const edm::ParameterSet& iConfig)
 {
   SPILL=0;
-  nevent=0;
+  evtID=0;
   //now do what ever initialization is needed
   usesResource("TFileService");
   edm::Service<TFileService> fs;
@@ -164,6 +168,14 @@ RecHitPlotter_HighGain_Correlation_CM::RecHitPlotter_HighGain_Correlation_CM(con
   sprintf(title, "Noise 2D Profile Layer");
   Noise_2D_Profile = fs->make<TH2F>(name, title, 2048, 0, 2048, 8000, -4000, 4000);
   tree->Branch( "evtID" , &evtID); 
+  tree->Branch( "meanx" , &meanx);   
+  tree->Branch( "meany" , &meany); 
+  tree->Branch( "rmsx" , &rmsx);
+  tree->Branch( "rmsy" , &rmsy); 
+  tree->Branch( "layer" , &layer); 
+  tree->Branch( "nhit" , &nhit); 
+  tree->Branch( "energy" , &energySum);
+
   for(int ILayer = 0; ILayer < nlayers; ILayer++) {
     sprintf(name, "Full_Cell_Layer_%i", ILayer);
     sprintf(title, "Full Cell Layer %i", ILayer);
@@ -186,10 +198,6 @@ RecHitPlotter_HighGain_Correlation_CM::RecHitPlotter_HighGain_Correlation_CM(con
 	sprintf(name, "Ski_%i_Channel_%i_Layer_%i", ISkiroc+1, Channel, ILayer);
 	sprintf(title, "Ski %i Channel %i Layer %i", ISkiroc+1, Channel, ILayer);
 	h_digi_layer_channel[ISkiroc][Channel][ILayer] = fs->make<TH1F>(name, title, 60000, -500., 5500.);
-	std::vector<double> vec;
-	channelADCMapVec[ ILayer*1000 + ISkiroc*100 + Channel ]=vec;
-	channelADCMap[ ILayer*1000 + ISkiroc*100 + Channel ]=0.0;
-	tree->Branch( name , &channelADCMap[ ILayer*1000 + ISkiroc*100 + Channel ]); 
       }
     }
   }
@@ -229,7 +237,7 @@ RecHitPlotter_HighGain_Correlation_CM::analyze(const edm::Event& event, const ed
   if(((event.id()).event() - 1) % (EVENTSPERSPILL * nlayers) == 0 && (event.id()).event() != 1) {
     SPILL++;
   }
-  nevent=((event.id()).event() - 1) % EVENTSPERSPILL + EVENTSPERSPILL * SPILL;
+  evtID=((event.id()).event() - 1) % EVENTSPERSPILL + EVENTSPERSPILL * SPILL;
   // if( prevSpill != SPILL ){
   //   writeTheTree();
   //   firstEventInSpill=
@@ -253,19 +261,21 @@ RecHitPlotter_HighGain_Correlation_CM::analyze(const edm::Event& event, const ed
   double Average_Pedestal_Per_Event_Merged_Cell[MAXLAYERS] = {0};
   int Cell_counter_Merged_Cell[MAXLAYERS] = {0};
   for(auto RecHit1 : *Rechits1) {
+    layer=RecHit1.id().layer();
     CellCentreXY = TheCell.GetCellCentreCoordinatesForPlots((RecHit1.id()).layer(), (RecHit1.id()).sensorIU(), (RecHit1.id()).sensorIV(), (RecHit1.id()).iu(), (RecHit1.id()).iv(), sensorsize);
     uint32_t EID = essource_.emap_.detId2eid(RecHit1.id());
     HGCalTBElectronicsId eid(EID);
-    if( (eid.iskiroc()-1)%nSkirocsPerLayer==0 && std::find(cellNotUseForCM_Ski1.begin(),cellNotUseForCM_Ski1.end(),eid.ichan())!=cellNotUseForCM_Ski1.end() )
-		  continue;
-    if( (eid.iskiroc()-1)%nSkirocsPerLayer==1 && std::find(cellNotUseForCM_Ski2.begin(),cellNotUseForCM_Ski2.end(),eid.ichan())!=cellNotUseForCM_Ski2.end() )
-		  continue;
-    //                if((eid.iskiroc()%2 == 1) && (eid.ichan() == 0 || eid.ichan() == 1 )) continue;
+    
+    //if( (eid.iskiroc()-1)%nSkirocsPerLayer==0 && std::find(cellNotUseForCM_Ski1.begin(),cellNotUseForCM_Ski1.end(),eid.ichan())!=cellNotUseForCM_Ski1.end() )
+    //		  continue;
+    //if( (eid.iskiroc()-1)%nSkirocsPerLayer==1 && std::find(cellNotUseForCM_Ski2.begin(),cellNotUseForCM_Ski2.end(),eid.ichan())!=cellNotUseForCM_Ski2.end() )
+    //		  continue;
+    ////                if((eid.iskiroc()%2 == 1) && (eid.ichan() == 0 || eid.ichan() == 1 )) continue;
     //             double iux = (CellCentreXY.first < 0 ) ? (CellCentreXY.first + delta) : (CellCentreXY.first - delta) ;
     //             double iyy = (CellCentreXY.second < 0 ) ? (CellCentreXY.second + delta) : (CellCentreXY.second - delta);
     //               Cell_counter++;
     //               Average_Pedestal_Per_Event_Full += RecHit1.energyHigh();
-    //               if(RecHit1.energyHigh() > 100) continue;
+    if(RecHit1.energyHigh() > 32) continue;
     if((RecHit1.id()).cellType() == 0) {
       //                       Full_Cell[(RecHit1.id()).layer() - 1]->Fill(RecHit1.energyHigh());
       Cell_counter[(RecHit1.id()).layer() - 1]++;
@@ -299,7 +309,9 @@ RecHitPlotter_HighGain_Correlation_CM::analyze(const edm::Event& event, const ed
     //            cout<<endl<<"iii= "<<iii<<" "<<Cell_counter[iii]<<" "<<Cell_counter_Half[iii]<<" "<<Cell_counter_MB[iii]<<" "<<Cell_counter_Calib_Pad[iii]<<" "<<Cell_counter_Merged_Cell[iii]<<endl;
   }
   
-  int key=0;
+  meanx=meany=rmsx=rmsy=0;
+  energySum=0;
+  nhit=0;
   for(auto RecHit : *Rechits) {
     //                if(RecHit.energyHigh() > 100) continue;
     if(!IsCellValid.iu_iv_valid((RecHit.id()).layer(), (RecHit.id()).sensorIU(), (RecHit.id()).sensorIV(), (RecHit.id()).iu(), (RecHit.id()).iv(), sensorsize))  continue;
@@ -309,38 +321,53 @@ RecHitPlotter_HighGain_Correlation_CM::analyze(const edm::Event& event, const ed
     uint32_t EID = essource_.emap_.detId2eid(RecHit.id());
     HGCalTBElectronicsId eid(EID);
     //                          TF1* Fit2= (TF1*) h_digi_layer_channel[eid.iskiroc()-1][eid.ichan()]->GetFunction("gaus");
-    key =  (RecHit.id().layer()-1)*1000 + (eid.iskiroc() - 1)%nSkirocsPerLayer*100 + eid.ichan();
     //HGCalTBHitInfo *h=new HGCalTBHitInfo();
-    //h->key=key;
     //h->event=((event.id()).event() - 1) % EVENTSPERSPILL + EVENTSPERSPILL * SPILL;
     //			  
     if(!doCommonMode_CM) {
       if( RecHit.energyHigh()!=0 )
 	h_digi_layer_channel[ (eid.iskiroc() - 1)%nSkirocsPerLayer ][eid.ichan()][(RecHit.id()).layer() - 1]->Fill(RecHit.energyHigh());
       Noise_2D_Profile->Fill((64 * (eid.iskiroc() - 1) + eid.ichan()), RecHit.energyHigh());
-      channelADCMapVec[ key ].push_back( RecHit.energyHigh() );
     }
     if(doCommonMode_CM) {
       AllCells_Ped->Fill(RecHit.energyHigh());
       //                             cout<<endl<<" Energy= "<<RecHit.energyHigh()<<" CM = "<<Average_Pedestal_Per_Event_Full[(RecHit.id()).layer() - 1]<<" Cells= "<<Cell_counter[(RecHit.id()).layer() -1]<<endl;
       float energy=0.;
-      if((RecHit.id()).cellType() == 0 || (RecHit.id()).cellType() == 4) 
-	energy = RecHit.energyHigh() - (Average_Pedestal_Per_Event_Full[(RecHit.id()).layer() - 1] / (Cell_counter[(RecHit.id()).layer() - 1]));
-      else if((RecHit.id()).cellType() == 2 ) 
-	energy = RecHit.energyHigh() - (Average_Pedestal_Per_Event_Half[(RecHit.id()).layer() - 1] / (Cell_counter_Half[(RecHit.id()).layer() - 1]));
-      else if((RecHit.id()).cellType() == 1) 
-	energy = RecHit.energyHigh() - (Average_Pedestal_Per_Event_Calib_Pad[(RecHit.id()).layer() - 1] / (Cell_counter_Calib_Pad[(RecHit.id()).layer() - 1]));
-      else if(((RecHit.id()).cellType() == 3) && ( ((RecHit.id()).iu() == 4 && (RecHit.id()).iv() == 3) || ((RecHit.id()).iu() == -7 && (RecHit.id()).iv() == 4) || ((RecHit.id()).iu() == 7 && (RecHit.id()).iv() == -3) || ((RecHit.id()).iu() == -4 && (RecHit.id()).iv() == -3) ) )
-	energy = RecHit.energyHigh() - (Average_Pedestal_Per_Event_MB[(RecHit.id()).layer() - 1] / (Cell_counter_MB[(RecHit.id()).layer() - 1]));
-      else if(((RecHit.id()).cellType() == 3) && (((RecHit.id()).iu() == -4 && (RecHit.id()).iv() == 6) || ((RecHit.id()).iu() == -2 && (RecHit.id()).iv() == 6) || ((RecHit.id()).iu() == 4 && (RecHit.id()).iv() == -7) || ((RecHit.id()).iu() == 2 && (RecHit.id()).iv() == -6))) 
-	energy = RecHit.energyHigh() - (Average_Pedestal_Per_Event_Merged_Cell[(RecHit.id()).layer() - 1] / (Cell_counter_Merged_Cell[(RecHit.id()).layer() - 1]));
+      float CM=0;
+      if( RecHit.id().cellType() == 0 || RecHit.id().cellType() == 4 )
+	CM = Average_Pedestal_Per_Event_Full[RecHit.id().layer() - 1] / (Cell_counter[RecHit.id().layer() - 1]);
+      else if(RecHit.id().cellType() == 2 ) 
+	CM = Average_Pedestal_Per_Event_Half[RecHit.id().layer() - 1] / (Cell_counter_Half[RecHit.id().layer() - 1]);
+      else if(RecHit.id().cellType() == 1) 
+	CM = Average_Pedestal_Per_Event_Calib_Pad[RecHit.id().layer() - 1] / (Cell_counter_Calib_Pad[RecHit.id().layer() - 1]);
+      else if((RecHit.id().cellType() == 3) && ( (RecHit.id().iu() == 4 && RecHit.id().iv() == 3) || (RecHit.id().iu() == -7 && RecHit.id().iv() == 4) || (RecHit.id().iu() == 7 && RecHit.id().iv() == -3) || (RecHit.id().iu() == -4 && RecHit.id().iv() == -3) ) )
+	CM = Average_Pedestal_Per_Event_MB[RecHit.id().layer() - 1] / (Cell_counter_MB[RecHit.id().layer() - 1]);
+      else if((RecHit.id().cellType() == 3) && ((RecHit.id().iu() == -4 && RecHit.id().iv() == 6) || (RecHit.id().iu() == -2 && RecHit.id().iv() == 6) || (RecHit.id().iu() == 4 && RecHit.id().iv() == -7) || (RecHit.id().iu() == 2 && RecHit.id().iv() == -6))) 
+      	CM = Average_Pedestal_Per_Event_Merged_Cell[RecHit.id().layer() - 1] / (Cell_counter_Merged_Cell[RecHit.id().layer() - 1]);
+      
+      energy = RecHit.energyHigh() - CM;
       
       if( RecHit.energyHigh()!=0 )
-	h_digi_layer_channel[ (eid.iskiroc() - 1)%nSkirocsPerLayer ][eid.ichan()][(RecHit.id()).layer() - 1]->Fill(energy);
-      channelADCMapVec[ key ].push_back( energy );
-      Noise_2D_Profile->Fill((64 * (eid.iskiroc() - 1) + eid.ichan()), RecHit.energyHigh() - (Average_Pedestal_Per_Event_Full[(RecHit.id()).layer() - 1] / (Cell_counter[(RecHit.id()).layer() - 1])));
+	h_digi_layer_channel[ (eid.iskiroc() - 1)%nSkirocsPerLayer ][eid.ichan()][RecHit.id().layer() - 1]->Fill(energy);
+      Noise_2D_Profile->Fill((64 * (eid.iskiroc() - 1) + eid.ichan()), RecHit.energyHigh() - (Average_Pedestal_Per_Event_Full[RecHit.id().layer() - 1] / (Cell_counter[RecHit.id().layer() - 1])));
+
+      if(energy < 10) continue;
+      energySum+=energy;
+      nhit++;
+      CellCentreXY = TheCell.GetCellCentreCoordinatesForPlots(RecHit.id().layer(), RecHit.id().sensorIU(), RecHit.id().sensorIV(), RecHit.id().iu(), RecHit.id().iv(), sensorsize);
+      meanx+=CellCentreXY.first*energy;
+      meany+=CellCentreXY.second*energy;
+      rmsx+=CellCentreXY.first*energy*energy;
+      rmsy+=CellCentreXY.second*energy*energy;;
     }
   }
+  if( energySum>0 ){
+    meanx /= energySum;
+    meany /= energySum;
+    rmsx = std::sqrt( rmsx/energySum - meanx*meanx );
+    rmsy = std::sqrt( rmsy/energySum - meany*meany );
+  }
+  tree->Fill();
 }//analyze method ends here
 
 
@@ -359,22 +386,6 @@ RecHitPlotter_HighGain_Correlation_CM::beginJob()
 void
 RecHitPlotter_HighGain_Correlation_CM::endJob()
 {
-  for( int ievt=0; ievt<nevent+1; ievt++ ){
-    std::cout << "event : " << ievt << std::endl;
-    for(int ILayer = 0; ILayer < nlayers; ILayer++) {
-      for(int ISkiroc = 0; ISkiroc < nSkirocsPerLayer; ISkiroc++) {
-	for(int Channel = 0; Channel < 64; Channel++) {
-	  //std::cout << ILayer*1000 + ISkiroc*100 + Channel << "\t" <<  << std::endl;
-	  if( channelADCMapVec[ ILayer*1000 + ISkiroc*100 + Channel ].size()>0 )
-	    channelADCMap[ ILayer*1000 + ISkiroc*100 + Channel ] = channelADCMapVec[ ILayer*1000 + ISkiroc*100 + Channel ].at(ievt);
-	}
-      }
-    }
-    evtID=ievt;
-    tree->Fill();
-  }
-  channelADCMap.clear();
-  channelADCMapVec.clear();
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
