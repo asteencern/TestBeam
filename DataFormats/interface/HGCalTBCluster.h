@@ -15,7 +15,7 @@ namespace reco{
     {
     public:
       HGCalTBCluster();
-      HGCalTBCluster(int layer, float energyLow, float energyHigh );
+      HGCalTBCluster(int layer, float energy, float energyLow, float energyHigh );
 	
       int   layer() const { return _layer; }
       float energyLow() const {	return _energyLow; }

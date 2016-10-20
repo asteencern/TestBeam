@@ -9,14 +9,13 @@ namespace reco
 
   }
 
-  HGCalTBCluster::HGCalTBCluster(int layer, float energyLow, float energyHigh) :
+  HGCalTBCluster::HGCalTBCluster(int layer, float energy, float energyLow, float energyHigh) :
     reco::CaloCluster(),
     _layer(layer),
     _energyLow(energyLow),
     _energyHigh(energyHigh)
   {
-
-
+		this->setEnergy(energy);
   }
 
   std::ostream& operator<<(std::ostream& out, const HGCalTBCluster& cluster)

@@ -144,15 +144,15 @@ ClusteringExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetu
   double CM=0;
   int count=0;
   for( auto hit : *Rechits ){
-    if( hit.id().cellType()!=0 || hit.energyHigh()<cmThreshold ) continue;
+    if( hit.id().cellType()!=0 || hit.energy()<cmThreshold ) continue;
     count++;
-    CM+=hit.energyHigh();
+    CM+=hit.energy();
   }
   CM/=count;
 
   for( auto hit : *Rechits ){
-    if( hit.energyHigh()-CM < cmThreshold ) continue;
-    sensorEnergy+=hit.energyHigh()-CM;
+    if( hit.energy()-CM < cmThreshold ) continue;
+    sensorEnergy+=hit.energy()-CM;
     if( colMap.find( hit.id().layer()-1 )!=colMap.end() )
       colMap[ hit.id().layer()-1 ].push_back( hit );
     else {
@@ -165,7 +165,7 @@ ClusteringExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetu
   for( std::map<int,HGCalTBRecHitCollection>::iterator it=colMap.begin(); it!=colMap.end(); ++it){
     double en=0;
     for( auto hit : it->second )
-      en+=hit.energyHigh()-CM;
+      en+=hit.energy()-CM;
     h_sum_layer[ it->first ]->Fill( en ); 
    
     m_HGCalTBClusteringParameterSetting.maxTransverse=1;
@@ -174,19 +174,19 @@ ClusteringExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetu
     algo_HGCalTBClustering->Run(it->second,outClusterCol);
     if( outClusterCol.size()>0 ){
       std::sort( outClusterCol.begin(), outClusterCol.end(), energySorter.sort );
-      if( (*outClusterCol.begin()).energyHigh()>ALLCELLS_THRESHOLD ) {
-	clusterEnergy+=(*outClusterCol.begin()).energyHigh()-CM*(*outClusterCol.begin()).size();
+      if( (*outClusterCol.begin()).energy()>ALLCELLS_THRESHOLD ) {
+	clusterEnergy+=(*outClusterCol.begin()).energy()-CM*(*outClusterCol.begin()).size();
 	clusterNhit+=(*outClusterCol.begin()).size();
-	h_cluster_layer[ it->first]->Fill( (*outClusterCol.begin()).energyHigh()-CM*(*outClusterCol.begin()).size() );
+	h_cluster_layer[ it->first]->Fill( (*outClusterCol.begin()).energy()-CM*(*outClusterCol.begin()).size() );
 	h_clusterSize_layer[ it->first ]->Fill( (*outClusterCol.begin()).size() );
       }
     }
     reco::HGCalTBCluster cluster7;
     algo_HGCalTBClustering->RunSimple(it->second,cluster7);
-    if( cluster7.size()>0 && cluster7.energyHigh()>ALLCELLS_THRESHOLD){
-      cluster7Energy+=cluster7.energyHigh()-CM*cluster7.size();
+    if( cluster7.size()>0 && cluster7.energy()>ALLCELLS_THRESHOLD){
+      cluster7Energy+=cluster7.energy()-CM*cluster7.size();
       cluster7Nhit+=cluster7.size();
-      h_layer_seven[ it->first ]->Fill( cluster7.energyHigh()-CM*cluster7.size() );
+      h_layer_seven[ it->first ]->Fill( cluster7.energy()-CM*cluster7.size() );
       h_7clusterSize_layer[ it->first ]->Fill( cluster7.size() );
     }
 
@@ -194,10 +194,10 @@ ClusteringExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetu
     m_HGCalTBClusteringParameterSetting.maxTransverse=2;
     algo_HGCalTBClustering->SetHGCalTBClusteringParameterSetting(m_HGCalTBClusteringParameterSetting);
     algo_HGCalTBClustering->RunSimple(it->second,cluster19);
-    if( cluster19.size()>0 && cluster19.energyHigh()>ALLCELLS_THRESHOLD){
-      cluster19Energy+=cluster19.energyHigh()-CM*cluster19.size();
+    if( cluster19.size()>0 && cluster19.energy()>ALLCELLS_THRESHOLD){
+      cluster19Energy+=cluster19.energy()-CM*cluster19.size();
       cluster19Nhit+=cluster19.size();
-      h_layer_nineteen[ it->first ]->Fill( cluster19.energyHigh()-CM*cluster19.size() );
+      h_layer_nineteen[ it->first ]->Fill( cluster19.energy()-CM*cluster19.size() );
       h_19clusterSize_layer[ it->first ]->Fill( cluster19.size() );
     }
 

@@ -22,11 +22,13 @@ void HGCalTBClustering::Run(HGCalTBRecHitCollection hitcol, std::vector<reco::HG
     cluster.setLayer( clusterDetIDs.at(0).layer() );
     float energyHigh=0.;
     float energyLow=0.;
+    float energy=0.;
     float x,y,z; 
     x = y = z = 0.0;
     for( std::vector<HGCalTBDetId>::iterator jt=clusterDetIDs.begin(); jt!=clusterDetIDs.end(); ++jt){
       energyHigh+=(*hitcol.find(*jt)).energyHigh();
       energyLow+=(*hitcol.find(*jt)).energyLow();
+      energy+=(*hitcol.find(*jt)).energy();
       std::pair<double, double> CellCentreXY;
       CellCentreXY=cellVertice.GetCellCentreCoordinatesForPlots( ((*hitcol.find(*jt)).id()).layer(), 
 								 ((*hitcol.find(*jt)).id()).sensorIU(), 
@@ -34,16 +36,17 @@ void HGCalTBClustering::Run(HGCalTBRecHitCollection hitcol, std::vector<reco::HG
 								 ((*hitcol.find(*jt)).id()).iu(), 
 								 ((*hitcol.find(*jt)).id()).iv(), 
 								 settings.sensorSize);
-      x += CellCentreXY.first*(*hitcol.find(*jt)).energyHigh();
-      y += CellCentreXY.second*(*hitcol.find(*jt)).energyHigh();
+      x += CellCentreXY.first*(*hitcol.find(*jt)).energy();
+      y += CellCentreXY.second*(*hitcol.find(*jt)).energy();
       //on verra plus tard pour z
     }
-    cluster.setPosition( math::XYZPoint(x,y,z)/energyHigh );
+    cluster.setPosition( math::XYZPoint(x,y,z)/energy );
     cluster.setEnergyLow(energyLow);
     cluster.setEnergyHigh(energyHigh);
+    cluster.setEnergy(energy);
 
     for( std::vector<HGCalTBDetId>::iterator jt=clusterDetIDs.begin(); jt!=clusterDetIDs.end(); ++jt)
-      cluster.addHitAndFraction( (*jt), (*hitcol.find(*jt)).energyLow()/energyLow );
+      cluster.addHitAndFraction( (*jt), (*hitcol.find(*jt)).energy()/energy );
 
     outClusterColl.push_back(cluster);
   }
@@ -75,12 +78,13 @@ void HGCalTBClustering::RunSimple(HGCalTBRecHitCollection hitcol, reco::HGCalTBC
   HGCalTBTopology top;
   HGCalTBRecHit hitMax=(*hitcol.begin());
   for( std::vector<HGCalTBRecHit>::iterator it=hitcol.begin(); it!=hitcol.end(); ++it){
-    if( (*it).energyHigh() > hitMax.energyHigh() )
+    if( (*it).energy() > hitMax.energy() )
       hitMax=(*it);
   }
   cluster.setLayer( hitMax.id().layer() );
   float energyHigh=hitMax.energyHigh();
   float energyLow=hitMax.energyLow();
+  float energy=hitMax.energy();
   float x,y,z;
   x = y = z = 0.0;
 
@@ -91,8 +95,8 @@ void HGCalTBClustering::RunSimple(HGCalTBRecHitCollection hitcol, reco::HGCalTBC
 							     hitMax.id().iu(), 
 							     hitMax.id().iv(), 
 							     settings.sensorSize);
-  x += CellCentreXY.first*hitMax.energyHigh();
-  y += CellCentreXY.second*hitMax.energyHigh();
+  x += CellCentreXY.first*hitMax.energy();
+  y += CellCentreXY.second*hitMax.energy();
 
 
   std::set<HGCalTBDetId> neighbors=top.getNeighboringCellsDetID( hitMax.id(), settings.sensorSize , settings.maxTransverse );
@@ -100,6 +104,7 @@ void HGCalTBClustering::RunSimple(HGCalTBRecHitCollection hitcol, reco::HGCalTBC
     if( hitcol.find(*jt) != hitcol.end() ){
       energyHigh+=(*hitcol.find(*jt)).energyHigh();
       energyLow+=(*hitcol.find(*jt)).energyLow();
+      energy+=(*hitcol.find(*jt)).energy();
       std::pair<double, double> CellCentreXY;
       CellCentreXY=cellVertice.GetCellCentreCoordinatesForPlots( ((*hitcol.find(*jt)).id()).layer(), 
 								 ((*hitcol.find(*jt)).id()).sensorIU(), 
@@ -107,19 +112,20 @@ void HGCalTBClustering::RunSimple(HGCalTBRecHitCollection hitcol, reco::HGCalTBC
 								 ((*hitcol.find(*jt)).id()).iu(), 
 								 ((*hitcol.find(*jt)).id()).iv(), 
 								 settings.sensorSize);
-      x += CellCentreXY.first*(*hitcol.find(*jt)).energyHigh();
-      y += CellCentreXY.second*(*hitcol.find(*jt)).energyHigh();
+      x += CellCentreXY.first*(*hitcol.find(*jt)).energy();
+      y += CellCentreXY.second*(*hitcol.find(*jt)).energy();
       //on verra plus tard pour z
     }
   }
-  cluster.setPosition( math::XYZPoint(x,y,z)/energyHigh );
+  cluster.setPosition( math::XYZPoint(x,y,z)/energy );
   cluster.setEnergyLow(energyLow);
   cluster.setEnergyHigh(energyHigh);
+  cluster.setEnergy(energy);
 
-  cluster.addHitAndFraction( hitMax.id(), hitMax.energyLow()/energyLow );
+  cluster.addHitAndFraction( hitMax.id(), hitMax.energy()/energy );
   for( std::set<HGCalTBDetId>::iterator jt=neighbors.begin(); jt!=neighbors.end(); ++jt)
     if( hitcol.find(*jt) != hitcol.end() )
-      cluster.addHitAndFraction( (*jt), (*hitcol.find(*jt)).energyLow()/energyLow );
+      cluster.addHitAndFraction( (*jt), (*hitcol.find(*jt)).energy()/energy );
   
 }
 
