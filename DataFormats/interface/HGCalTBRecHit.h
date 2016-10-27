@@ -3,6 +3,7 @@
 
 #include "DataFormats/CaloRecHit/interface/CaloRecHit.h"
 #include "HGCal/DataFormats/interface/HGCalTBDetId.h"
+#include "DataFormats/Math/interface/Point3D.h"
 #include <vector>
 
 /** \class HGCalTBRecHit
@@ -63,6 +64,14 @@ public:
 		return flagField(flag, 1);
 	}; //flagBits_ & ( 0x1<<flag);}
 
+	void setPosition( math::XYZPoint pos ){ position_=pos; }
+	math::XYZPoint position() const { return position_; }
+	double x() const { return position_.x(); }
+	double y() const { return position_.y(); }
+	double z() const { return position_.z(); }
+	
+ protected:
+	math::XYZPoint position_;
 };
 
 std::ostream& operator<<(std::ostream& s, const HGCalTBRecHit& hit);
