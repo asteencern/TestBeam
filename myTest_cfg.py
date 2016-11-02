@@ -130,8 +130,10 @@ elif(options.configuration == "2"):
     process.hgcaltbtrackingexample.CERN_8layers_config = cms.untracked.int32(1)
 
 
-process.hgcaltbtrackingexample.maxMip = cms.untracked.int32(50)
+process.hgcaltbtrackingexample.minMip = cms.untracked.int32(8)
+process.hgcaltbtrackingexample.maxMip = cms.untracked.int32(60)
 process.hgcaltbtrackingexample.PrepareTreeForDisplay = cms.untracked.bool(False)
+process.hgcaltbtrackingexample.doTrackCleaning = cms.untracked.bool(True)
 process.hgcaltbtrackingexample.CMThreshold = cms.untracked.int32(100)
 process.hgcaltbrechits.adcSaturation=cms.int32(1800)
 process.hgcaltbrechits.LG2HG=cms.double(9.75)

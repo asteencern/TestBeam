@@ -28,6 +28,9 @@ parser.add_option("-P", "--pedestalRun", dest="pedestalRun",type="int",
 parser.add_option("-C", "--pedestalPath", dest="pedestalPath",
                   help="path to find pedestal files", default="CondObjects/data/")
 
+parser.add_option("-S", "--saveOnEos", dest="saveOnEos", type="int",
+                  help="bool to set to save output on eps", default=1)
+
 (options, args) = parser.parse_args()
 
 print options
@@ -87,7 +90,7 @@ print cmd
 os.system(cmd)
 os.system("rm "+eosFile)
 
-if options.process == "tracking":
+if options.process == "tracking" and options.saveOnEos==1:
     os.system("")
     eosOutputFile="%s_Output_%06d.root"%(options.runType,options.runNumber)
     os.system("source /afs/cern.ch/project/eos/installation/user/etc/setup.sh; xrdcp -f Output.root root://eosuser.cern.ch//eos/user/a/asteen/hgcal/data/sep2016/tracking-reco/"+eosOutputFile)

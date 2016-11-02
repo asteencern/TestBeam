@@ -190,11 +190,11 @@ TrackingExampleAnalyzer::TrackingExampleAnalyzer(const edm::ParameterSet& iConfi
 	  os.str("");
 	  os << "Layer" << ilayer << "_Skiroc" << iskiroc << "_Channel" << ichannel << "_MIP";
 	  int key=ilayer*1000+iskiroc*100+ichannel;
-	  h = fs->make<TH1F>(os.str().c_str(), os.str().c_str(), 20*(maxMip-minMip), -2*minMip, 2*maxMip );
+	  h = fs->make<TH1F>(os.str().c_str(), os.str().c_str(), 8000, -20, 60 );
 	  h_mip_map[key]=h;
 	  os.str("");
 	  os << "Layer" << ilayer << "_Skiroc" << iskiroc << "_Channel" << ichannel << "_Noise";
-	  h = fs->make<TH1F>(os.str().c_str(), os.str().c_str(), 20*(maxMip-minMip), -2*minMip, 2*maxMip );
+	  h = fs->make<TH1F>(os.str().c_str(), os.str().c_str(), 10000, -50, 50 );
 	  h_noise_map[key]=h;
 	}
       }
@@ -266,7 +266,7 @@ TrackingExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
 					   layerZPosition[ ilayer ]) 
 			   );
 	col.push_back( (*it) );
-	_nhitlayer[ ilayer ]++;
+	//_nhitlayer[ ilayer ]++;
 	_energylayer[ ilayer ]+=(*it).energy();
 	_meanx[ ilayer ] += (*it).x()*(*it).energy() ;
 	_meany[ ilayer ] += (*it).y()*(*it).energy() ;
@@ -312,6 +312,7 @@ TrackingExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
     _ay = track.momentum().y();    
     
     for( std::vector<HGCalTBDetId>::iterator it=track.getDetIds().begin(); it!=track.getDetIds().end(); ++it ){
+      _nhitlayer[ (*it).layer()-1 ]++;
       HGCalTBRecHit hit=(*col.find(*it));
       if( prepareTreeForDisplay ){
 	_x.push_back( hit.x() );
