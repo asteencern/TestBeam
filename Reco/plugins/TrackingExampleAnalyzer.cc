@@ -238,7 +238,7 @@ TrackingExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
       coltmp[ ilayer ].push_back( hit );
     }
     subtraction.Run( coltmp[ ilayer ] );
-    _commonMode.push_back(subtraction.fullCommonMode());
+    _commonMode.push_back(subtraction.commonMode());
     _nhitlayer.push_back(0); 
     _energylayer.push_back(0.);
     _meanx.push_back(0.);
@@ -267,7 +267,6 @@ TrackingExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
 			   );
 	col.push_back( (*it) );
 	//_nhitlayer[ ilayer ]++;
-	_energylayer[ ilayer ]+=(*it).energy();
 	_meanx[ ilayer ] += (*it).x()*(*it).energy() ;
 	_meany[ ilayer ] += (*it).y()*(*it).energy() ;
 	_rmsx[ ilayer ] += (*it).x()*(*it).x()*(*it).energy();
@@ -314,6 +313,7 @@ TrackingExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
     for( std::vector<HGCalTBDetId>::iterator it=track.getDetIds().begin(); it!=track.getDetIds().end(); ++it ){
       _nhitlayer[ (*it).layer()-1 ]++;
       HGCalTBRecHit hit=(*col.find(*it));
+      _energylayer[ (*it).layer()-1  ]+=hit.energy();
       if( prepareTreeForDisplay ){
 	_x.push_back( hit.x() );
 	_y.push_back( hit.y() );

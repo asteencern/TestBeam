@@ -12,20 +12,10 @@ class HGCalTBCommonModeSubtraction
  HGCalTBCommonModeSubtraction(double thr);
   ~HGCalTBCommonModeSubtraction(){;}
   void Run( HGCalTBRecHitCollection &col );
-  inline double fullCommonMode(){return fullCommonMode_;}
-  inline double innerCalibCommonMode(){return innerCalibCommonMode_;}
-  inline double outerCalibCommonMode(){return outerCalibCommonMode_;}
-  inline double halfCommonMode(){return halfCommonMode_;}
-  inline double mouseBitesCommonMode(){return mouseBitesCommonMode_;}
-  inline double mergedCommonMode(){return mergedCommonMode_;}
+  inline double commonMode(){return commonMode_;}
  private:
   double threshold;
-  double fullCommonMode_;
-  double innerCalibCommonMode_;
-  double outerCalibCommonMode_;
-  double halfCommonMode_;
-  double mouseBitesCommonMode_;
-  double mergedCommonMode_;
+  double commonMode_;
 };
 
 #endif
