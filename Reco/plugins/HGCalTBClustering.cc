@@ -1,13 +1,11 @@
 #include "HGCal/Reco/plugins/HGCalTBClustering.h"
 #include "HGCal/Geometry/interface/HGCalTBTopology.h"
 #include "HGCal/Geometry/interface/HGCalTBGeometryParameters.h"
-#include "HGCal/Geometry/interface/HGCalTBCellVertices.h"
 
 #include "algorithm"
 
 void HGCalTBClustering::Run(HGCalTBRecHitCollection hitcol, std::vector<reco::HGCalTBCluster> &outClusterColl)
 {
-  HGCalTBCellVertices cellVertice;
   std::vector<HGCalTBDetId> temp;
   for( std::vector<HGCalTBRecHit>::iterator it=hitcol.begin(); it!=hitcol.end(); ++it){
     if( std::find(temp.begin(), temp.end(), (*it).id())!=temp.end() )
@@ -16,7 +14,6 @@ void HGCalTBClustering::Run(HGCalTBRecHitCollection hitcol, std::vector<reco::HG
     temp.push_back( (*it).id() );
     clusterDetIDs.push_back( (*it).id() );
     BuildCluster(hitcol, temp, clusterDetIDs);
-    //std::cout << "clusterDetIDs.size() = " << clusterDetIDs.size() << std::endl;
 
     reco::HGCalTBCluster cluster;
     cluster.setLayer( clusterDetIDs.at(0).layer() );
@@ -29,16 +26,9 @@ void HGCalTBClustering::Run(HGCalTBRecHitCollection hitcol, std::vector<reco::HG
       energyHigh+=(*hitcol.find(*jt)).energyHigh();
       energyLow+=(*hitcol.find(*jt)).energyLow();
       energy+=(*hitcol.find(*jt)).energy();
-      std::pair<double, double> CellCentreXY;
-      CellCentreXY=cellVertice.GetCellCentreCoordinatesForPlots( ((*hitcol.find(*jt)).id()).layer(), 
-								 ((*hitcol.find(*jt)).id()).sensorIU(), 
-								 ((*hitcol.find(*jt)).id()).sensorIV(), 
-								 ((*hitcol.find(*jt)).id()).iu(), 
-								 ((*hitcol.find(*jt)).id()).iv(), 
-								 settings.sensorSize);
-      x += CellCentreXY.first*(*hitcol.find(*jt)).energy();
-      y += CellCentreXY.second*(*hitcol.find(*jt)).energy();
-      //on verra plus tard pour z
+      x += (*hitcol.find(*jt)).x()*(*hitcol.find(*jt)).energy();
+      y += (*hitcol.find(*jt)).y()*(*hitcol.find(*jt)).energy();
+      z += (*hitcol.find(*jt)).z()*(*hitcol.find(*jt)).energy();
     }
     cluster.setPosition( math::XYZPoint(x,y,z)/energy );
     cluster.setEnergyLow(energyLow);
@@ -50,7 +40,6 @@ void HGCalTBClustering::Run(HGCalTBRecHitCollection hitcol, std::vector<reco::HG
 
     outClusterColl.push_back(cluster);
   }
-  //std::cout << "outClusterColl.size() " << outClusterColl.size() << std::endl;
 }
 
 
@@ -74,7 +63,6 @@ void HGCalTBClustering::BuildCluster(HGCalTBRecHitCollection hitcol,
 void HGCalTBClustering::RunSimple(HGCalTBRecHitCollection hitcol, reco::HGCalTBCluster &cluster)
 {
   if( hitcol.size()==0 ) return;
-  HGCalTBCellVertices cellVertice;
   HGCalTBTopology top;
   HGCalTBRecHit hitMax=(*hitcol.begin());
   for( std::vector<HGCalTBRecHit>::iterator it=hitcol.begin(); it!=hitcol.end(); ++it){
@@ -85,19 +73,9 @@ void HGCalTBClustering::RunSimple(HGCalTBRecHitCollection hitcol, reco::HGCalTBC
   float energyHigh=hitMax.energyHigh();
   float energyLow=hitMax.energyLow();
   float energy=hitMax.energy();
-  float x,y,z;
-  x = y = z = 0.0;
-
-  std::pair<double, double> CellCentreXY;
-  CellCentreXY=cellVertice.GetCellCentreCoordinatesForPlots( hitMax.id().layer(), 
-							     hitMax.id().sensorIU(), 
-							     hitMax.id().sensorIV(), 
-							     hitMax.id().iu(), 
-							     hitMax.id().iv(), 
-							     settings.sensorSize);
-  x += CellCentreXY.first*hitMax.energy();
-  y += CellCentreXY.second*hitMax.energy();
-
+  float x = hitMax.x()*hitMax.energy();
+  float y = hitMax.y()*hitMax.energy();
+  float z = hitMax.z()*hitMax.energy();
 
   std::set<HGCalTBDetId> neighbors=top.getNeighboringCellsDetID( hitMax.id(), settings.sensorSize , settings.maxTransverse );
   for( std::set<HGCalTBDetId>::iterator jt=neighbors.begin(); jt!=neighbors.end(); ++jt){
@@ -105,16 +83,9 @@ void HGCalTBClustering::RunSimple(HGCalTBRecHitCollection hitcol, reco::HGCalTBC
       energyHigh+=(*hitcol.find(*jt)).energyHigh();
       energyLow+=(*hitcol.find(*jt)).energyLow();
       energy+=(*hitcol.find(*jt)).energy();
-      std::pair<double, double> CellCentreXY;
-      CellCentreXY=cellVertice.GetCellCentreCoordinatesForPlots( ((*hitcol.find(*jt)).id()).layer(), 
-								 ((*hitcol.find(*jt)).id()).sensorIU(), 
-								 ((*hitcol.find(*jt)).id()).sensorIV(), 
-								 ((*hitcol.find(*jt)).id()).iu(), 
-								 ((*hitcol.find(*jt)).id()).iv(), 
-								 settings.sensorSize);
-      x += CellCentreXY.first*(*hitcol.find(*jt)).energy();
-      y += CellCentreXY.second*(*hitcol.find(*jt)).energy();
-      //on verra plus tard pour z
+      x += (*hitcol.find(*jt)).x()*(*hitcol.find(*jt)).energy();
+      y += (*hitcol.find(*jt)).y()*(*hitcol.find(*jt)).energy();
+      z += (*hitcol.find(*jt)).z()*(*hitcol.find(*jt)).energy();
     }
   }
   cluster.setPosition( math::XYZPoint(x,y,z)/energy );

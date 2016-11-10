@@ -18,7 +18,7 @@ public:
 	bool iu_iv_valid(int layer, int sensor_iu, int sensor_iv, int iu, int iv, int sensorSize) const;
 	double Cell_Area(int cell_type) const;//returns area in cm*cm
 	std::set<HGCalTBDetId> getNeighboringCellsDetID(HGCalTBDetId detid, int sensorSize, int maxDistance) const;
-	int getCellType( int u, int v, int sensorSize) const;
+	int getCellType( int u, int v, int sensorSize, bool reverseLayer) const;
 };
 
 #endif

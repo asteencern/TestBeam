@@ -26,6 +26,7 @@ namespace reco{
 			const Vector &_momentum,/* const CovarianceMatrix &_cov, */
 			std::vector<HGCalTBDetId> &_detIds);
       
+      bool isNull() const { return chi2_!=chi2_; }
       double chi2() const { return chi2_; }
       double ndof() const { return ndof_; }
       double normalisedChi2() const { return chi2_/ndof_; }

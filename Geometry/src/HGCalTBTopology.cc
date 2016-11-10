@@ -45,31 +45,37 @@ double HGCalTBTopology::Cell_Area(int cell_type) const
 	else return -1.; //signifies an invalid cell type
 }
 
-int HGCalTBTopology::getCellType( int iu, int iv, int sensorSize ) const
+int HGCalTBTopology::getCellType( int iu, int iv, int sensorSize, bool reverseLayer ) const
 {
-	int aiu=abs(iu);
-	int aiv=abs(iv);
-	int asum=abs(iu+iv);
-	if( sensorSize==128 ){
-		if( (iu==-2 && iv == 4) || (iu==1 && iv == -2) )
-			return 1;//calib pad
-		else if( (aiu+aiv>=6) && (aiu==1||aiu>=5) && (aiv==1||aiv>=5) && (asum==1||asum>=5) )
-			return 2;//half hex
-		else if( (iu==-3&&iv==-4) || (iu==-7&&iv==4) || (iu==4&&iv==3) || (iu==7&&iv==-3) || 
-				(iu==-4&&iv==-3) || (iu==-7&&iv==3) || (iu==3&&iv==4) || (iu==7&&iv==-4) ) //no hit should be found in these anyway
-			return 3;//mouse bite
-		else if( (iu==2&&iv==-6) || (iu==-4&&iv==7) || (iu==-3&&iv==7) || (iu==4&&iv==-6) ||
-				(iu==3&&iv==-7) || (iu==-4&&iv==6) || (iu==-2&&iv==6) || (iu==4&&iv==-7) ) //no hit should be found in these anyway
-			return 3; //merged cell
+  int aiu=abs(iu);
+  int aiv=abs(iv);
+  int asum=abs(iu+iv);
+  if( sensorSize==128 ){
+    if( ((iu==2 && iv == -4) || (iu==-1 && iv == 2)) && reverseLayer==false )
+      return 4;//calib pad
+    else if( ((iu==-2 && iv == 4) || (iu==1 && iv == -2)) && reverseLayer==true)
+      return 4;//calib pad
+
+    else if( (aiu+aiv>=6) && (aiu==1||aiu>=5) && (aiv==1||aiv>=5) && (asum==1||asum>=5) )
+      return 2;//half hex
+    else if( (iu==-3&&iv==-4) || (iu==-7&&iv==4) || (iu==4&&iv==3) || (iu==7&&iv==-3) || 
+	     (iu==-4&&iv==-3) || (iu==-7&&iv==3) || (iu==3&&iv==4) || (iu==7&&iv==-4) ) //no hit should be found in these anyway
+      return 3;//mouse bite
+    else if( (iu==2&&iv==-6) || (iu==-4&&iv==7) || (iu==-3&&iv==7) || (iu==4&&iv==-6) ||
+	     (iu==3&&iv==-7) || (iu==-4&&iv==6) || (iu==-2&&iv==6) || (iu==4&&iv==-7) ) //no hit should be found in these anyway
+      return 5; //merged cell
 		// change "return 3" to "return 5" as soon as merged cell are used in electronic map
-		else return 0;
-	}
-	else return -1;
+    else return 0;
+  }
+  else return -1;
 }
 
 std::set<HGCalTBDetId> HGCalTBTopology::getNeighboringCellsDetID(HGCalTBDetId detid, int sensorSize, int maxDistance) const
 {
 	int layer=detid.layer();
+	bool reverseLayer=false;
+	if( layer == 5 || layer == 7)
+	  reverseLayer=true;
 	std::set<HGCalTBDetId> detids;
 	for(int u=-maxDistance; u<=maxDistance; u++){
 		for(int v=-maxDistance; v<=maxDistance; v++){
@@ -80,11 +86,11 @@ std::set<HGCalTBDetId> HGCalTBTopology::getNeighboringCellsDetID(HGCalTBDetId de
 			int iv=detid.iv()+v;
 			bool validCoord = iu_iv_valid( layer, iU, iV, iu, iv, sensorSize);
 			if( !validCoord ) continue;
-			int cellType=getCellType( iu, iv, sensorSize);
+			int cellType=getCellType( iu, iv, sensorSize, reverseLayer);
 			HGCalTBDetId did( layer, iU, iV, iu, iv, cellType);
 			detids.insert(did);
-			if( cellType==1 ){// 1 means calib pad; need also to include outer calib pad
-				cellType=4;
+			if( cellType==4 ){// 1 means calib pad; need also to include outer calib pad
+				cellType=1;
 				HGCalTBDetId didbis( layer, iU, iV, iu, iv, cellType);
 				detids.insert(didbis);
 			}
