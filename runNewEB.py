@@ -13,7 +13,7 @@ parser.add_option("-n", "--runNumber", dest="runNumber",type="int",
 parser.add_option("-t", "--runType", dest="runType",choices=["HGCRun","PED"],
                   help="run type",default="HGCRun")
 
-parser.add_option("-p", "--process", dest="process",choices=["reco", "pedestal", "tracking", "rechitplotter"],
+parser.add_option("-p", "--process", dest="process",choices=["reco", "pedestal", "tracking", "rechitplotter","display"],
                   help="process to run",default="pedestal")
 
 parser.add_option("-s", "--nSpills", dest="nSpills",type="int",
@@ -30,6 +30,9 @@ parser.add_option("-C", "--pedestalPath", dest="pedestalPath",
 
 parser.add_option("-S", "--saveOnEos", dest="saveOnEos", type="int",
                   help="bool to set to save output on eps", default=1)
+
+# parser.add_option("-e", "--nEvents", dest="nEvents",type="int",
+#                   help="number of events to run", default=-1)
 
 (options, args) = parser.parse_args()
 
@@ -85,6 +88,12 @@ elif options.process == "tracking":
     cmd+=" pedestalsLowGain="+pedestalsLowGain
     cmd+=" pedestalsHighGain="+pedestalsHighGain
     cmd+=" chainSequence=2"
+elif options.process == "display":
+    pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
+    pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
+    cmd+=" pedestalsLowGain="+pedestalsLowGain
+    cmd+=" pedestalsHighGain="+pedestalsHighGain
+    cmd+=" chainSequence=3"
 
 print cmd
 os.system(cmd)
@@ -94,3 +103,7 @@ if options.process == "tracking" and options.saveOnEos==1:
     os.system("")
     eosOutputFile="%s_Output_%06d.root"%(options.runType,options.runNumber)
     os.system("source /afs/cern.ch/project/eos/installation/user/etc/setup.sh; xrdcp -f Output.root root://eosuser.cern.ch//eos/user/a/asteen/hgcal/data/sep2016/tracking-reco/"+eosOutputFile)
+if options.process == "reco" and options.saveOnEos==1:
+    os.system("")
+    eosOutputFile="%s_Output_%06d.root"%(options.runType,options.runNumber)
+    os.system("source /afs/cern.ch/project/eos/installation/user/etc/setup.sh; xrdcp -f Output.root root://eosuser.cern.ch//eos/user/a/asteen/hgcal/data/sep2016/shower-reco/"+eosOutputFile)

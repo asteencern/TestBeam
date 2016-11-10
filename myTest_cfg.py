@@ -92,6 +92,7 @@ process.load('HGCal.StandardSequences.RawToDigi_cff')
 process.load('HGCal.StandardSequences.LocalReco_cff')
 process.load('HGCal.StandardSequences.dqm_cff')
 process.load('HGCal.StandardSequences.TrackingReco_cff')
+process.load('HGCal.StandardSequences.ShowerReco_cff')
 
 process.source = cms.Source("HGCalTBTextSource",
                             run=cms.untracked.int32(options.runNumber),
@@ -125,26 +126,35 @@ process.TFileService = cms.Service("TFileService", fileName = cms.string("Output
 if(options.configuration == "1"):
     process.LayerSumAnalyzer.CERN_8layers_config = cms.int32(1)
     process.hgcaltbtrackingexample.CERN_8layers_config = cms.untracked.int32(0)
+    process.hgcaltbshower.CERN_8layers_config = cms.untracked.int32(0)
 elif(options.configuration == "2"):
     process.LayerSumAnalyzer.CERN_8layers_config = cms.int32(2)
     process.hgcaltbtrackingexample.CERN_8layers_config = cms.untracked.int32(1)
+    process.hgcaltbshower.CERN_8layers_config = cms.untracked.int32(1)
 
+process.hgcaltbrechits.adcSaturation=cms.int32(1800)
+process.hgcaltbrechits.LG2HG=cms.double(9.75)
 
-process.hgcaltbtrackingexample.minMip = cms.untracked.int32(8)
+process.hgcaltbtrackingexample.minMip = cms.untracked.int32(9)
 process.hgcaltbtrackingexample.maxMip = cms.untracked.int32(60)
 process.hgcaltbtrackingexample.PrepareTreeForDisplay = cms.untracked.bool(False)
 process.hgcaltbtrackingexample.doTrackCleaning = cms.untracked.bool(True)
 process.hgcaltbtrackingexample.CMThreshold = cms.untracked.int32(100)
-process.hgcaltbrechits.adcSaturation=cms.int32(1800)
-process.hgcaltbrechits.LG2HG=cms.double(9.75)
+
+process.hgcaltbeventdisplay.minEnergy = cms.untracked.double(100)
+process.hgcaltbeventdisplay.CMThreshold = cms.untracked.int32(100)
+
+process.hgcaltbshower.minEnergy = cms.untracked.double(100)
+process.hgcaltbshower.CMThreshold = cms.untracked.int32(40)
+
 if (options.chainSequence == 1):
     process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbdigisplotter)
 elif (options.chainSequence == 2):
     process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbtrackingexample)
 elif (options.chainSequence == 3):
-    process.p =cms.Path(process.hgcaltbdigis)
+    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbeventdisplay)
 elif (options.chainSequence == 4):
-    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcalclusteringexample)
+    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbshower)
 elif (options.chainSequence == 5):
     process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbrechitsplotter_highgain_correlation_cm)
 elif (options.chainSequence == 6):

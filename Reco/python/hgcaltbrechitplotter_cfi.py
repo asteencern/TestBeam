@@ -9,6 +9,14 @@ hgcaltbrechitsplotter_highgain_new = cms.EDAnalyzer("RecHitPlotter_HighGain_New"
                HGCALTBTRACKS  = cms.InputTag("hgcaltbtracks","","unpack" )
                               )
 
+hgcaltbeventdisplay = cms.EDAnalyzer("EventDisplay",
+                                     HGCALTBRECHITS = cms.InputTag("hgcaltbrechits","","unpack" ),
+                                     Nlayers = cms.untracked.int32( 8 ),
+                                     SensorSize = cms.untracked.int32( 128 ),
+                                     minEnergy = cms.untracked.double( 50 ),
+                                     CMThreshold = cms.untracked.int32( 30 )
+                                     )
+
 hgcaltbrechitsplotter_highgain_cluster = cms.EDAnalyzer("RecHitPlotter_HighGain_Cluster",
                HGCALTBRECHITS = cms.InputTag("hgcaltbrechits","","unpack" )
                               )
