@@ -1,4 +1,5 @@
 #include "HGCal/Reco/plugins/HGCalTBRecHitProducer.h"
+#include <iostream>
 
 HGCalTBRecHitProducer::HGCalTBRecHitProducer(const edm::ParameterSet& cfg)
 	: outputCollectionName(cfg.getParameter<std::string>("OutputCollectionName")),
@@ -8,9 +9,27 @@ HGCalTBRecHitProducer::HGCalTBRecHitProducer(const edm::ParameterSet& cfg)
 	  _gainsLow_filename(cfg.getParameter<std::string>("gainLow")),
 	  _gainsHigh_filename(cfg.getParameter<std::string>("gainHigh")),
 	  _adcSaturation(cfg.getParameter<int>("adcSaturation")),
-	  _LG2HG_value(cfg.getParameter<double>("LG2HG"))
+	  //_LG2HG_value(cfg.getParameter<std::vector<double> >("LG2HG_CERN")),
+	  //_mapFile(cfg.getParameter<std::string>("mapFile")),
+	  _layers_config(cfg.getParameter<int>("layers_config"))
 {
 	produces <HGCalTBRecHitCollection>(outputCollectionName);
+	//	std::cout << " >>> _LG2HG_value size = " << _LG2HG_value.size() << std::endl;
+
+	if(_layers_config == 0){
+	  _LG2HG_value = cfg.getParameter<std::vector<double> >("LG2HG_FNAL");
+	  _mapFile = cfg.getParameter<std::string>("mapFile_FNAL");
+	}
+	else{
+	  _LG2HG_value = cfg.getParameter<std::vector<double> >("LG2HG_CERN");
+	  _mapFile = cfg.getParameter<std::string>("mapFile_CERN");
+	}
+
+	HGCalCondObjectTextIO io(0);
+	edm::FileInPath fip(_mapFile);
+        if (!io.load(fip.fullPath(), essource_.emap_)) {
+	  throw cms::Exception("Unable to load electronics map");
+	};
 
 }
 
@@ -66,9 +85,16 @@ void HGCalTBRecHitProducer::produce(edm::Event& event, const edm::EventSetup& iS
 			float energyLow = digi[iSample].adcLow() - pedestal_low_value * adcToGeV_low_value;
 			float energyHigh = digi[iSample].adcHigh() - pedestal_high_value * adcToGeV_high_value;
 
-			float energy = ( energyHigh < _adcSaturation ) ? energyHigh : energyLow * _LG2HG_value;
+			float energy = -1.;
 
 			HGCalTBRecHit recHit(digi.detid(), energy, energyLow, energyHigh, digi[iSample].tdc()); //, _LG2HG_value, _gainThr_value * adcToGeV_high_value); ///\todo use time calibration!
+
+			uint32_t EID = essource_.emap_.detId2eid(recHit.id());
+			HGCalTBElectronicsId eid(EID);
+
+
+			energy = ( energyHigh < _adcSaturation ) ? energyHigh : energyLow * _LG2HG_value.at(eid.iskiroc() - 1);
+			recHit.setEnergy(energy);
 
 			if(digi[iSample].adcHigh() > _adcSaturation) recHit.setFlag(HGCalTBRecHit::kHighGainSaturated);
 			if(digi[iSample].adcLow() > _adcSaturation) recHit.setFlag(HGCalTBRecHit::kLowGainSaturated);
