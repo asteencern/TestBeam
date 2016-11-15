@@ -132,8 +132,8 @@ elif(options.configuration == "2"):
     process.hgcaltbtrackingexample.CERN_8layers_config = cms.untracked.int32(1)
     process.hgcaltbshower.CERN_8layers_config = cms.untracked.int32(1)
 
-process.hgcaltbrechits.adcSaturation=cms.int32(1800)
-process.hgcaltbrechits.LG2HG=cms.double(9.75)
+#process.hgcaltbrechits.adcSaturation=cms.int32(1800)
+#process.hgcaltbrechits.LG2HG=cms.double(9.75)
 
 process.hgcaltbtrackingexample.minMip = cms.untracked.int32(9)
 process.hgcaltbtrackingexample.maxMip = cms.untracked.int32(60)

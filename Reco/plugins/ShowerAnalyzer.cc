@@ -83,7 +83,9 @@ private:
   std::vector<double> _rmsx;
   std::vector<double> _rmsy;
   std::vector<double> _commonMode;
+  std::vector<double> _specCommonMode;
   
+  std::vector<int> _channelForCM;
   
   std::string mapfile_ = "HGCal/CondObjects/data/map_CERN_8Layers_Sept2016.txt";
   struct {
@@ -191,7 +193,14 @@ ShowerAnalyzer::ShowerAnalyzer(const edm::ParameterSet& iConfig) :
   tree->Branch( "rmsx","std::vector<double>",&_rmsx);
   tree->Branch( "rmsy","std::vector<double>",&_rmsy);
   tree->Branch( "commonMode","std::vector<double>",&_commonMode);
+  tree->Branch( "specCommonMode","std::vector<double>",&_specCommonMode);
   
+  int channel[]={1,2,9,11,13,14,21,27,31,37,41,48,49,50,55,57,62,63};
+  int border[]={3,15,29,35,47,53,58,61};
+  for( unsigned int i=0; i<sizeof(channel)/sizeof(int); i++ )
+  _channelForCM.push_back(channel[i]);
+  for( unsigned int i=0; i<sizeof(border)/sizeof(int); i++ )
+    _channelForCM.push_back(border[i]);
 }
 
 ShowerAnalyzer::~ShowerAnalyzer()
@@ -213,6 +222,7 @@ ShowerAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup)
   _rmsx.clear();
   _rmsy.clear();
   _commonMode.clear();
+  _specCommonMode.clear();
   _energyInCluster=0;
   edm::Handle<HGCalTBRecHitCollection> Rechits;
   event.getByToken(HGCalTBRecHitCollection_, Rechits);
@@ -236,17 +246,29 @@ ShowerAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup)
     _rmsx.push_back(0.0);
     _rmsy.push_back(0.0);
     _commonMode.push_back(0.0);
+    _specCommonMode.push_back(0.0);
 
     HGCalTBRecHitCollection hitcollayer;
     HGCalTBRecHitCollection coltmp;
+    double cm=0;
+    int count=1;
     for( auto hit : *Rechits ){
       if( hit.id().layer()-1!=ilayer ) continue;
+      uint32_t EID = essource_.emap_.detId2eid( hit.id() );
+      HGCalTBElectronicsId eid(EID);
+      int chan=eid.ichan();
+      if( std::find( _channelForCM.begin(),_channelForCM.end(),chan ) != _channelForCM.end() && hit.energy()<cmThreshold ){
+	cm+=hit.energy();
+       	count++;
+	//if( ilayer==0 && eid.iskiroc()==1 )std::cout << chan << std::endl;
+      }
       coltmp.push_back( hit );
     }
+    _specCommonMode[ ilayer ] = cm/count;
     subtraction.Run( coltmp );
     _commonMode[ ilayer ] = subtraction.commonMode();
     for( std::vector<HGCalTBRecHit>::iterator it=coltmp.begin(); it!=coltmp.end(); ++it ){
-      if( (*it).id().cellType()==1 ||
+      if( //(*it).id().cellType()==1 ||
 	  (*it).id().cellType()==2 || 
 	  (*it).id().cellType()==3 || 
 	  //(*it).id().cellType()==4 || 
@@ -310,6 +332,11 @@ ShowerAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup)
 void
 ShowerAnalyzer::beginJob()
 {
+  HGCalCondObjectTextIO io(0);
+  edm::FileInPath fip(mapfile_);
+  if (!io.load(fip.fullPath(), essource_.emap_)) {
+    throw cms::Exception("Unable to load electronics map");
+  }
 }
 
 void
