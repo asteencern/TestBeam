@@ -152,7 +152,7 @@ if (options.chainSequence == 1):
 elif (options.chainSequence == 2):
     process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbtrackingexample)
 elif (options.chainSequence == 3):
-    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbeventdisplay)
+    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbeventdisplay)
 elif (options.chainSequence == 4):
     process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbshower)
 elif (options.chainSequence == 5):

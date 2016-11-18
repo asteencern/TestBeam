@@ -61,19 +61,22 @@ private:
   void InitTH2Poly(TH2Poly& poly, int layerID, int sensorIU, int sensorIV);
 
   // ----------member data ---------------------------
-  edm::EDGetToken HGCalTBRecHitCollection_;
+  //  edm::EDGetToken HGCalTBRecHitCollection_;
+  edm::EDGetToken HGCalTBClusterCollection_;
+  edm::EDGetToken HGCalTBClusterCollection7_;
+  edm::EDGetToken HGCalTBClusterCollection19_;
   std::string mapfile_ = "HGCal/CondObjects/data/map_CERN_8Layers_Sept2016.txt";
   struct {
     HGCalElectronicsMap emap_;
   } essource_;
   int nlayers;
   int sensorsize;
-  double minEnergy;
-  int cmThreshold;
+  //  double minEnergy;
+  //int cmThreshold;
   int _evtID;
-  HGCalTBClustering *algo_HGCalTBClustering;
-  SortByEnergy<reco::HGCalTBCluster,reco::HGCalTBCluster> energySorter;
-  HGCalTBClusteringParameterSetting m_HGCalTBClusteringParameterSetting;
+  //HGCalTBClustering *algo_HGCalTBClustering;
+  //SortByEnergy<reco::HGCalTBCluster,reco::HGCalTBCluster> energySorter;
+  //HGCalTBClusteringParameterSetting m_HGCalTBClusteringParameterSetting;
   HGCalTBTopology IsCellValid;
   HGCalTBCellVertices TheCell;
   std::vector<std::pair<double, double>> CellXY;
@@ -84,23 +87,26 @@ private:
 
 EventDisplay::EventDisplay(const edm::ParameterSet& iConfig) :
   nlayers( iConfig.getUntrackedParameter<int>("Nlayers",8) ),
-  sensorsize( iConfig.getUntrackedParameter<int>("SensorSize",128) ),
-  minEnergy( iConfig.getUntrackedParameter<double>("minEnergy",50.0) ),
-  cmThreshold( iConfig.getUntrackedParameter<int>("CMThreshold",30) )
+  sensorsize( iConfig.getUntrackedParameter<int>("SensorSize",128) )
+  //minEnergy( iConfig.getUntrackedParameter<double>("minEnergy",50.0) ),
+  //cmThreshold( iConfig.getUntrackedParameter<int>("CMThreshold",30) )
 {
   usesResource("TFileService");
-  HGCalTBRecHitCollection_ = consumes<HGCalTBRecHitCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBRECHITS"));
+  //HGCalTBRecHitCollection_ = consumes<HGCalTBRecHitCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBRECHITS"));
+  HGCalTBClusterCollection_ = consumes<reco::HGCalTBClusterCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBCLUSTERS"));
+  HGCalTBClusterCollection7_ = consumes<reco::HGCalTBClusterCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBCLUSTERS7"));
+  HGCalTBClusterCollection19_ = consumes<reco::HGCalTBClusterCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBCLUSTERS19"));
   _evtID = 0;
 
-  m_HGCalTBClusteringParameterSetting.maxTransverse=1;
-  algo_HGCalTBClustering = new HGCalTBClustering();
-  algo_HGCalTBClustering->SetHGCalTBClusteringParameterSetting(m_HGCalTBClusteringParameterSetting);
+  //m_HGCalTBClusteringParameterSetting.maxTransverse=1;
+  //algo_HGCalTBClustering = new HGCalTBClustering();
+  //algo_HGCalTBClustering->SetHGCalTBClusteringParameterSetting(m_HGCalTBClusteringParameterSetting);
 }
 
 
 EventDisplay::~EventDisplay()
 {
-  delete algo_HGCalTBClustering;
+  //delete algo_HGCalTBClustering;
 }
 
 void EventDisplay::InitTH2Poly(TH2Poly& poly, int layerID, int sensorIU, int sensorIV)
@@ -131,8 +137,12 @@ void
 EventDisplay::analyze(const edm::Event& event, const edm::EventSetup& setup)
 {
 
-  edm::Handle<HGCalTBRecHitCollection> Rechits;
-  event.getByToken(HGCalTBRecHitCollection_, Rechits);
+  edm::Handle<reco::HGCalTBClusterCollection> clusters;
+  event.getByToken(HGCalTBClusterCollection_, clusters);
+  edm::Handle<reco::HGCalTBClusterCollection> clusters7;
+  event.getByToken(HGCalTBClusterCollection7_, clusters7);
+  edm::Handle<reco::HGCalTBClusterCollection> clusters19;
+  event.getByToken(HGCalTBClusterCollection19_, clusters19);
 
   std::ostringstream os( std::ostringstream::ate );
   TH2Poly *h_RecHit_layer[nlayers];
@@ -167,68 +177,116 @@ EventDisplay::analyze(const edm::Event& event, const edm::EventSetup& setup)
 
   }
   _evtID++;
-  HGCalTBCommonModeSubtraction subtraction( cmThreshold );
+  //HGCalTBCommonModeSubtraction subtraction( cmThreshold );
+  
+  float clusterID[nlayers];
+  for(int i=0; i<nlayers; i++) 
+    clusterID[i]=0.;
 
-  for( int ilayer=0; ilayer<nlayers; ilayer++){
-    HGCalTBRecHitCollection coltmp;
-    for( auto hit : *Rechits ){
-      if( hit.id().layer()-1!=ilayer ) continue;
-      coltmp.push_back( hit );
-    }
-    subtraction.Run( coltmp );
-    
-    HGCalTBRecHitCollection hitcol;
-    for( std::vector<HGCalTBRecHit>::iterator it=coltmp.begin(); it!=coltmp.end(); ++it){
-      if( (*it).id().cellType()==1 )
-	continue;
-      if( (*it).energy() > minEnergy ){
-    	hitcol.push_back( *it );
-      }
-    }
-    std::vector<reco::HGCalTBCluster> clusters;
-    m_HGCalTBClusteringParameterSetting.maxTransverse=1;
-    algo_HGCalTBClustering->SetHGCalTBClusteringParameterSetting(m_HGCalTBClusteringParameterSetting);
-    if( hitcol.size() > 0 )
-      algo_HGCalTBClustering->Run(hitcol,clusters);
-    
-    reco::HGCalTBCluster cluster7;
-    algo_HGCalTBClustering->RunSimple(hitcol,cluster7);
-
-    reco::HGCalTBCluster cluster19;
-    m_HGCalTBClusteringParameterSetting.maxTransverse=2;
-    algo_HGCalTBClustering->SetHGCalTBClusteringParameterSetting(m_HGCalTBClusteringParameterSetting);
-    algo_HGCalTBClustering->RunSimple(hitcol,cluster19);
-
-    for( std::vector<HGCalTBRecHit>::iterator it=hitcol.begin(); it!=hitcol.end(); ++it){
-      if(!IsCellValid.iu_iv_valid( (*it).id().layer(),
-				   (*it).id().sensorIU(), (*it).id().sensorIV(), 
-				   (*it).id().iu(), (*it).id().iv(), sensorsize ) 
+  std::cout << "Display : number of clusters = " << clusters->size() << std::endl;
+  for( auto cluster : *clusters ){
+    clusterID[ cluster.layer()-1 ]+=1.0;
+    std::cout << "layer = " << cluster.layer() << std::endl;
+    for( std::vector< std::pair<DetId,float> >::const_iterator it=cluster.hitsAndFractions().begin(); it!=cluster.hitsAndFractions().end(); ++it ){
+      HGCalTBDetId detID=(*it).first;
+      if(!IsCellValid.iu_iv_valid( detID.layer(),
+				   detID.sensorIU(), detID.sensorIV(), 
+				   detID.iu(), detID.iv(), sensorsize ) 
 	 )  continue;
-      CellCentreXY = TheCell.GetCellCentreCoordinatesForPlots( (*it).id().layer(), 
-							       (*it).id().sensorIU(), (*it).id().sensorIV(), 
-							       (*it).id().iu(), (*it).id().iv(), sensorsize );
+      CellCentreXY = TheCell.GetCellCentreCoordinatesForPlots( detID.layer(), 
+							       detID.sensorIU(), detID.sensorIV(), 
+							       detID.iu(), detID.iv(), sensorsize );
       double iux = (CellCentreXY.first < 0 ) ? (CellCentreXY.first + delta) : (CellCentreXY.first - delta) ;
       double iuy = (CellCentreXY.second < 0 ) ? (CellCentreXY.second + delta) : (CellCentreXY.second - delta);
-      h_RecHit_layer[ (*it).id().layer()-1 ]->Fill(iux , iuy, (*it).energy());
-      
-      for( std::vector<reco::HGCalTBCluster>::iterator jt=clusters.begin(); jt!=clusters.end(); ++jt )
-       	for( std::vector< std::pair<DetId,float> >::const_iterator kt=(*jt).hitsAndFractions().begin(); kt!=(*jt).hitsAndFractions().end(); ++kt )
-       	  if( (*it).id() == (*kt).first ){
-       	    float w=1.0+(float)std::distance( clusters.begin(), jt );
-       	    h_Cluster_layer[ (*it).id().layer()-1 ]->Fill(iux , iuy, w);
-       	  }
-
-      for( std::vector< std::pair<DetId,float> >::const_iterator kt=cluster7.hitsAndFractions().begin(); kt!=cluster7.hitsAndFractions().end(); ++kt )
-	if( (*it).id() == (*kt).first ){
-	  h_Cluster7_layer[ (*it).id().layer()-1 ]->Fill(iux , iuy);
-	}
-      for( std::vector< std::pair<DetId,float> >::const_iterator kt=cluster19.hitsAndFractions().begin(); kt!=cluster19.hitsAndFractions().end(); ++kt )
-	if( (*it).id() == (*kt).first ){
-	  h_Cluster19_layer[ (*it).id().layer()-1 ]->Fill(iux , iuy);
-	}
-
+      h_Cluster_layer[ detID.layer()-1 ]->Fill(iux , iuy, clusterID[ detID.layer()-1 ]);
+      h_RecHit_layer[ detID.layer()-1 ]->Fill(iux , iuy, (*it).second*cluster.energy());
     }
   }
+
+  for(int i=0; i<nlayers; i++) 
+    clusterID[i]=0.;
+  for( auto cluster : *clusters7 ){
+    clusterID[ cluster.layer()-1 ]+=1.0;
+    for( std::vector< std::pair<DetId,float> >::const_iterator it=cluster.hitsAndFractions().begin(); it!=cluster.hitsAndFractions().end(); ++it ){
+      HGCalTBDetId detID=(*it).first;
+      if(!IsCellValid.iu_iv_valid( detID.layer(),
+  				   detID.sensorIU(), detID.sensorIV(), 
+  				   detID.iu(), detID.iv(), sensorsize ) 
+  	 )  continue;
+      CellCentreXY = TheCell.GetCellCentreCoordinatesForPlots( detID.layer(), 
+  							       detID.sensorIU(), detID.sensorIV(), 
+  							       detID.iu(), detID.iv(), sensorsize );
+      double iux = (CellCentreXY.first < 0 ) ? (CellCentreXY.first + delta) : (CellCentreXY.first - delta) ;
+      double iuy = (CellCentreXY.second < 0 ) ? (CellCentreXY.second + delta) : (CellCentreXY.second - delta);
+      h_Cluster7_layer[ detID.layer()-1 ]->Fill(iux , iuy, clusterID[ detID.layer()-1 ]);
+    }
+  }
+  
+  for(int i=0; i<nlayers; i++) 
+    clusterID[i]=0.;
+  for( auto cluster : *clusters19 ){
+    clusterID[ cluster.layer()-1 ]+=1.0;
+    for( std::vector< std::pair<DetId,float> >::const_iterator it=cluster.hitsAndFractions().begin(); it!=cluster.hitsAndFractions().end(); ++it ){
+      HGCalTBDetId detID=(*it).first;
+      if(!IsCellValid.iu_iv_valid( detID.layer(),
+  				   detID.sensorIU(), detID.sensorIV(), 
+  				   detID.iu(), detID.iv(), sensorsize ) 
+  	 )  continue;
+      CellCentreXY = TheCell.GetCellCentreCoordinatesForPlots( detID.layer(), 
+  							       detID.sensorIU(), detID.sensorIV(), 
+  							       detID.iu(), detID.iv(), sensorsize );
+      double iux = (CellCentreXY.first < 0 ) ? (CellCentreXY.first + delta) : (CellCentreXY.first - delta) ;
+      double iuy = (CellCentreXY.second < 0 ) ? (CellCentreXY.second + delta) : (CellCentreXY.second - delta);
+      h_Cluster19_layer[ detID.layer()-1 ]->Fill(iux , iuy, clusterID[ detID.layer()-1 ]);
+    }
+  }
+
+  //for( int ilayer=0; ilayer<nlayers; ilayer++){
+  //  HGCalTBRecHitCollection coltmp;
+  //  for( auto hit : *Rechits ){
+  //    if( hit.id().layer()-1!=ilayer ) continue;
+  //    coltmp.push_back( hit );
+  //  }
+  //  subtraction.Run( coltmp );
+  //  
+  //  HGCalTBRecHitCollection hitcol;
+  //  for( std::vector<HGCalTBRecHit>::iterator it=coltmp.begin(); it!=coltmp.end(); ++it){
+  //    if( (*it).id().cellType()==1 )
+  //	continue;
+  //    if( (*it).energy() > minEnergy ){
+  //  	hitcol.push_back( *it );
+  //    }
+  //  }
+  //  std::vector<reco::HGCalTBCluster> clusters;
+  //  m_HGCalTBClusteringParameterSetting.maxTransverse=1;
+  //  algo_HGCalTBClustering->SetHGCalTBClusteringParameterSetting(m_HGCalTBClusteringParameterSetting);
+  //  if( hitcol.size() > 0 )
+  //    algo_HGCalTBClustering->Run(hitcol,clusters);
+  //  
+  //  reco::HGCalTBCluster cluster7;
+  //  algo_HGCalTBClustering->RunSimple(hitcol,cluster7);
+  //
+  //  reco::HGCalTBCluster cluster19;
+  //  m_HGCalTBClusteringParameterSetting.maxTransverse=2;
+  //  algo_HGCalTBClustering->SetHGCalTBClusteringParameterSetting(m_HGCalTBClusteringParameterSetting);
+  //  algo_HGCalTBClustering->RunSimple(hitcol,cluster19);
+  //
+  //  for( std::vector<HGCalTBRecHit>::iterator it=hitcol.begin(); it!=hitcol.end(); ++it){
+  //    h_RecHit_layer[ (*it).id().layer()-1 ]->Fill(iux , iuy, (*it).energy());
+  //    
+  //    for( std::vector<reco::HGCalTBCluster>::iterator jt=clusters.begin(); jt!=clusters.end(); ++jt )
+  // 
+  //    for( std::vector< std::pair<DetId,float> >::const_iterator kt=cluster7.hitsAndFractions().begin(); kt!=cluster7.hitsAndFractions().end(); ++kt )
+  //	if( (*it).id() == (*kt).first ){
+  //	  h_Cluster7_layer[ (*it).id().layer()-1 ]->Fill(iux , iuy);
+  //	}
+  //    for( std::vector< std::pair<DetId,float> >::const_iterator kt=cluster19.hitsAndFractions().begin(); kt!=cluster19.hitsAndFractions().end(); ++kt )
+  //	if( (*it).id() == (*kt).first ){
+  //	  h_Cluster19_layer[ (*it).id().layer()-1 ]->Fill(iux , iuy);
+  //	}
+  //
+  //  }
+  //}
 }
 
 void
