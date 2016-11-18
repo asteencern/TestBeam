@@ -78,21 +78,22 @@ void HGCalTBCaloTrackFitter::LeastSquare( HGCalTBRecHitCollection hitcol )
   float zzsum = 0.0;
   float xzsum = 0.0;
   float yzsum = 0.0;
-
+  float esum = 0.0;
   for( std::vector<HGCalTBRecHit>::iterator it=hitcol.begin(); it!=hitcol.end(); ++it ){  
-    xsum = xsum + (*it).x();
-    ysum = ysum + (*it).y();
-    zsum = zsum + (*it).z();
-    xzsum = xzsum + (*it).x()*(*it).z();
-    yzsum = yzsum + (*it).y()*(*it).z();
-    zzsum = zzsum + (*it).z()*(*it).z();
+    xsum = xsum + (*it).x()*(*it).energy();
+    ysum = ysum + (*it).y()*(*it).energy();
+    zsum = zsum + (*it).z()*(*it).energy();
+    xzsum = xzsum + (*it).x()*(*it).z()*(*it).energy();
+    yzsum = yzsum + (*it).y()*(*it).z()*(*it).energy();
+    zzsum = zzsum + (*it).z()*(*it).z()*(*it).energy();
+    esum = esum + (*it).energy();
   }
 
-  _params[0] = (zzsum*xsum-xzsum*zsum)/(hitcol.size()*zzsum-zsum*zsum);
-  _params[2] = (zzsum*ysum-yzsum*zsum)/(hitcol.size()*zzsum-zsum*zsum);
+  _params[0] = (zzsum*xsum-xzsum*zsum)/(esum*zzsum-zsum*zsum);
+  _params[2] = (zzsum*ysum-yzsum*zsum)/(esum*zzsum-zsum*zsum);
 
-  _params[1] = (xzsum*hitcol.size()-xsum*zsum)/(hitcol.size()*zzsum-zsum*zsum);
-  _params[3] = (yzsum*hitcol.size()-ysum*zsum)/(hitcol.size()*zzsum-zsum*zsum);
+  _params[1] = (xzsum*esum-xsum*zsum)/(esum*zzsum-zsum*zsum);
+  _params[3] = (yzsum*esum-ysum*zsum)/(esum*zzsum-zsum*zsum);
   
   //_paramsError[0] = std::sqrt( zzsum/(hitcol.size()*zzsum-zsum*zsum) );
   //_paramsError[2] = std::sqrt( zzsum/(hitcol.size()*zzsum-zsum*zsum) );
