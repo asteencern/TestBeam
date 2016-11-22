@@ -28,7 +28,7 @@
 #include "HGCal/CondObjects/interface/HGCalElectronicsMap.h"
 #include "HGCal/CondObjects/interface/HGCalCondObjectTextIO.h"
 
-#include "HGCal/Reco/plugins/HGCalTBCaloTrackFitter.h"
+#include "HGCal/Reco/interface/HGCalTBCaloTrackingUtil.h"
 #include "HGCal/Reco/plugins/HGCalTBCommonModeSubtraction.h"
 
 using namespace std;
@@ -94,8 +94,6 @@ private:
   std::map<int, TH1F*> h_mip_map;
   std::map<int, TH1F*> h_noise_map;
 
-  HGCalTBCaloTrackFitter *algo_HGCalTBCaloTrackFitter;
-
   const float PI = 3.1415927;
 
   std::string mapfile_ = "HGCal/CondObjects/data/map_CERN_8Layers_Sept2016.txt";
@@ -151,7 +149,6 @@ TrackingExampleAnalyzer::TrackingExampleAnalyzer(const edm::ParameterSet& iConfi
     tree->Branch( "energy","std::vector<double>",&_energy );
   }
 
-  algo_HGCalTBCaloTrackFitter = new HGCalTBCaloTrackFitter( CERN_8layers_config,sensorSize );
   _evtID=0;
 
 
@@ -204,7 +201,6 @@ TrackingExampleAnalyzer::TrackingExampleAnalyzer(const edm::ParameterSet& iConfi
 
 TrackingExampleAnalyzer::~TrackingExampleAnalyzer()
 {
-  delete algo_HGCalTBCaloTrackFitter;
 }
 
 void
@@ -235,6 +231,10 @@ TrackingExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
   for( int ilayer=0; ilayer<nlayers; ilayer++){
     for( auto hit : *Rechits ){
       if( hit.id().layer()-1!=ilayer ) continue;
+
+      if( essource_.emap_.existsDetId( hit.id() )==false )
+	std::cout << "problem at key = " << hit.id() << std::endl;
+
       coltmp[ ilayer ].push_back( hit );
     }
     subtraction.Run( coltmp[ ilayer ] );
@@ -253,6 +253,7 @@ TrackingExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
 	  //(*it).id().cellType()==4 || 
 	  (*it).id().cellType()==5 )
 	continue;
+
       if( (*it).energy() > minMip && (*it).energy() < maxMip ){
 	std::pair<double, double> CellCentreXY;
 	CellCentreXY=cellVertice.GetCellCentreCoordinatesForPlots( (*it).id().layer(), 
@@ -296,10 +297,39 @@ TrackingExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
   _nhit=col.size();
   _trackSuccess=false;
   if( col.size()>=4 ){
-    reco::HGCalTBCaloTrack track;
-    algo_HGCalTBCaloTrackFitter->Run( track,col,doTrackCleaning,maxDistanceToRecoTrack );
-    algo_HGCalTBCaloTrackFitter->deltaDistances( _deltas,col,track );
+    std::vector<HGCalTBDetId> detIds;
+    reco::WeightedLeastSquare<HGCalTBRecHitCollection> wls;
+    std::vector<float> trackPar;
+    std::vector<float> trackParError;
+    wls.run( col, trackPar, trackParError);
+    float chi2 = wls.chi2( col, trackPar);
+    int ndof = col.size();
+    Vector momentum = Vector(-1., 0., trackPar[1]).Cross( Vector(0., -1., trackPar[3]) );
+    float z0=layerZPosition.at(0);
+    Point vertex = Point( trackPar[0]+trackPar[1]*z0, trackPar[2]+trackPar[3]*z0, z0 );
+    reco::HGCalTBCaloTrack track( chi2, ndof, vertex, momentum,/* cov,*/ detIds);
 
+    if( doTrackCleaning==true ){
+      reco::TrackCleaner cleaner;
+      HGCalTBRecHitCollection cleancol;
+      cleaner.clean( col, cleancol, track, maxDistanceToRecoTrack );
+      wls.run( cleancol, trackPar, trackParError);
+      for( std::vector<HGCalTBRecHit>::iterator it=cleancol.begin(); it!=cleancol.end(); ++it )  
+      	detIds.push_back( (*it).id() );
+      chi2 = wls.chi2( cleancol, trackPar);
+      ndof = cleancol.size();
+      momentum = Vector(-1., 0., trackPar[1]).Cross( Vector(0., -1., trackPar[3]) );
+      z0=layerZPosition.at(0);
+      vertex = Point( trackPar[0]+trackPar[1]*z0, trackPar[2]+trackPar[3]*z0, z0 );
+      track=reco::HGCalTBCaloTrack( chi2, ndof, vertex, momentum,/* cov,*/ detIds);
+      //runPCA(cleancol);
+    }
+    else{
+      for( std::vector<HGCalTBRecHit>::iterator it=col.begin(); it!=col.end(); ++it )  
+     	detIds.push_back( (*it).id() );
+      track=reco::HGCalTBCaloTrack( chi2, ndof, vertex, momentum,/* cov,*/ detIds);
+    }
+  
     _trackSuccess = (track.getDetIds().size()>=4) ? true:false;
     _tracknhit = track.getDetIds().size();
     _chi2 = track.normalisedChi2();

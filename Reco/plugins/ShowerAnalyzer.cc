@@ -29,11 +29,9 @@
 #include "HGCal/CondObjects/interface/HGCalElectronicsMap.h"
 #include "HGCal/CondObjects/interface/HGCalCondObjectTextIO.h"
 
-#include "HGCal/Reco/plugins/HGCalTBClustering.h"
 #include "HGCal/Reco/interface/HGCalTBSortingHelper.h"
-#include "HGCal/Reco/plugins/HGCalTBCaloTrackFitter.h"
-#include "HGCal/Reco/plugins/HGCalTBCommonModeSubtraction.h"
-#include "HGCal/Reco/plugins/Distance.h"
+#include "HGCal/Reco/interface/HGCalTBCaloTrackingUtil.h"
+#include "HGCal/Reco/interface/Distance.h"
 
 using namespace std;
 
@@ -51,11 +49,12 @@ private:
 
   // ----------member data ---------------------------
   edm::EDGetToken HGCalTBRecHitCollection_;
+  edm::EDGetToken HGCalTBClusterCollection_;
+  edm::EDGetToken HGCalTBClusterCollection7_;
+  edm::EDGetToken HGCalTBClusterCollection19_;
   int nlayers;
   int nskirocsperlayer;
   int sensorSize;
-  int cmThreshold;
-  double minEnergy;
   int CERN_8layers_config;
   double energyShowerThreshold ;
   float maxTransverseProfile;
@@ -82,28 +81,19 @@ private:
   std::vector<double> _meany;
   std::vector<double> _rmsx;
   std::vector<double> _rmsy;
-  std::vector<double> _commonMode;
-  std::vector<double> _specCommonMode;
   
-  std::vector<int> _channelForCM;
-  
-  std::string mapfile_ = "HGCal/CondObjects/data/map_CERN_8Layers_Sept2016.txt";
+    std::string mapfile_ = "HGCal/CondObjects/data/map_CERN_8Layers_Sept2016.txt";
   struct {
     HGCalElectronicsMap emap_;
   } essource_;  
   const float PI = 3.1415927;
-  HGCalTBCaloTrackFitter *algo_HGCalTBCaloTrackFitter;
-  HGCalTBClustering *algo_HGCalTBClustering;
   SortByEnergy<reco::HGCalTBCluster,reco::HGCalTBCluster> energySorter;
-  HGCalTBClusteringParameterSetting m_HGCalTBClusteringParameterSetting;
 };
 
 ShowerAnalyzer::ShowerAnalyzer(const edm::ParameterSet& iConfig) :
   nlayers( iConfig.getUntrackedParameter<int>("NLayers",8) ),
   nskirocsperlayer( iConfig.getUntrackedParameter<int>("NSkirocsPerLayer",2) ),
   sensorSize( iConfig.getUntrackedParameter<int>("SensorSize",128) ),
-  cmThreshold( iConfig.getUntrackedParameter<int>("CMThreshold",30) ),
-  minEnergy( iConfig.getUntrackedParameter<double>("minEnergy",10) ),
   CERN_8layers_config( iConfig.getUntrackedParameter<int>("CERN_8layers_config",0) ),
   energyShowerThreshold( iConfig.getUntrackedParameter<double>("energyShowerThreshold",200) ),
   maxTransverseProfile( iConfig.getUntrackedParameter<double>("maxTransverseProfile",20) )
@@ -111,6 +101,10 @@ ShowerAnalyzer::ShowerAnalyzer(const edm::ParameterSet& iConfig) :
   usesResource("TFileService");
   edm::Service<TFileService> fs;
   HGCalTBRecHitCollection_ = consumes<HGCalTBRecHitCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBRECHITS"));
+  HGCalTBClusterCollection_ = consumes<reco::HGCalTBClusterCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBCLUSTERS"));
+  // HGCalTBClusterCollection7_ = consumes<reco::HGCalTBClusterCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBCLUSTERS7"));
+  // HGCalTBClusterCollection19_ = consumes<reco::HGCalTBClusterCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBCLUSTERS19"));
+
   _evtID = 0;
  
   if( CERN_8layers_config==0 ){
@@ -167,12 +161,6 @@ ShowerAnalyzer::ShowerAnalyzer(const edm::ParameterSet& iConfig) :
     throw;
   }
   
-  m_HGCalTBClusteringParameterSetting.maxTransverse=1;
-  algo_HGCalTBClustering = new HGCalTBClustering();
-  algo_HGCalTBClustering->SetHGCalTBClusteringParameterSetting(m_HGCalTBClusteringParameterSetting);
-  
-  algo_HGCalTBCaloTrackFitter = new HGCalTBCaloTrackFitter( CERN_8layers_config,sensorSize );
-
   tree = fs->make<TTree>("tree", "HGCAL TB variables tree");
   tree->Branch( "evtID",&_evtID ); 
   tree->Branch( "theta",&_theta );
@@ -192,21 +180,10 @@ ShowerAnalyzer::ShowerAnalyzer(const edm::ParameterSet& iConfig) :
   tree->Branch( "meany","std::vector<double>",&_meany);
   tree->Branch( "rmsx","std::vector<double>",&_rmsx);
   tree->Branch( "rmsy","std::vector<double>",&_rmsy);
-  tree->Branch( "commonMode","std::vector<double>",&_commonMode);
-  tree->Branch( "specCommonMode","std::vector<double>",&_specCommonMode);
-  
-  int channel[]={1,2,9,11,13,14,21,27,31,37,41,48,49,50,55,57,62,63};
-  int border[]={3,15,29,35,47,53,58,61};
-  for( unsigned int i=0; i<sizeof(channel)/sizeof(int); i++ )
-  _channelForCM.push_back(channel[i]);
-  for( unsigned int i=0; i<sizeof(border)/sizeof(int); i++ )
-    _channelForCM.push_back(border[i]);
 }
 
 ShowerAnalyzer::~ShowerAnalyzer()
 {
-  delete algo_HGCalTBClustering;
-  delete algo_HGCalTBCaloTrackFitter;
 }
 
 void
@@ -221,110 +198,74 @@ ShowerAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup)
   _meany.clear();
   _rmsx.clear();
   _rmsy.clear();
-  _commonMode.clear();
-  _specCommonMode.clear();
   _energyInCluster=0;
   edm::Handle<HGCalTBRecHitCollection> Rechits;
   event.getByToken(HGCalTBRecHitCollection_, Rechits);
 
-  HGCalTBRecHitCollection hitcol;
-  HGCalTBCellVertices cellVertice;
-  HGCalTBCommonModeSubtraction subtraction( cmThreshold );
-  std::vector<reco::HGCalTBCluster> outClusterCol;
+  edm::Handle<reco::HGCalTBClusterCollection> clusters;
+  event.getByToken(HGCalTBClusterCollection_, clusters);
   
-  //hard-coded : ok for 6" layers
+  // edm::Handle<reco::HGCalTBClusterCollection> clusters7;
+  // event.getByToken(HGCalTBClusterCollection7_, clusters7);
+  // edm::Handle<reco::HGCalTBClusterCollection> clusters19;
+  // event.getByToken(HGCalTBClusterCollection19_, clusters19);
+        
   for( int ir=0; ir<maxTransverseProfile; ir++ ){
     _transverseprofile.push_back(0);
   }
 
+  //
+  
+  reco::HGCalTBClusterCollection shower;
+  _nhit=0;
   for( int ilayer=0; ilayer<nlayers; ilayer++){
     _energylayer.push_back(0.0);
-    _clusterenergylayer.push_back(0.0);
-    _clustersizelayer.push_back(0);
     _meanx.push_back(0.0);
     _meany.push_back(0.0);
     _rmsx.push_back(0.0);
     _rmsy.push_back(0.0);
-    _commonMode.push_back(0.0);
-    _specCommonMode.push_back(0.0);
+    _clusterenergylayer.push_back(0.0);
+    _clustersizelayer.push_back(0);
+    std::vector<reco::HGCalTBCluster> temp;
+    for( auto cluster : *clusters ){
+      if( cluster.layer()!=ilayer ) continue;
+      temp.push_back(cluster);
+      _nhit+=cluster.size();
+    }
+    if( temp.empty() ) continue;
+    std::sort( temp.begin(), temp.end(), energySorter.sort );
+    shower.push_back( (*temp.begin()) );
+    _clusterenergylayer.at(ilayer) = (*temp.begin()).energy();
+    _clustersizelayer.at(ilayer) = (*temp.begin()).size();
+    _energyInCluster+=(*temp.begin()).energy();
+  }
 
-    HGCalTBRecHitCollection hitcollayer;
-    HGCalTBRecHitCollection coltmp;
-    double cm=0;
-    int count=1;
-    for( auto hit : *Rechits ){
-      if( hit.id().layer()-1!=ilayer ) continue;
-      uint32_t EID = essource_.emap_.detId2eid( hit.id() );
-      HGCalTBElectronicsId eid(EID);
-      int chan=eid.ichan();
-      if( std::find( _channelForCM.begin(),_channelForCM.end(),chan ) != _channelForCM.end() && hit.energy()<cmThreshold ){
-	cm+=hit.energy();
-       	count++;
-	//if( ilayer==0 && eid.iskiroc()==1 )std::cout << chan << std::endl;
-      }
-      coltmp.push_back( hit );
-    }
-    _specCommonMode[ ilayer ] = cm/count;
-    subtraction.Run( coltmp );
-    _commonMode[ ilayer ] = subtraction.commonMode();
-    for( std::vector<HGCalTBRecHit>::iterator it=coltmp.begin(); it!=coltmp.end(); ++it ){
-      if( //(*it).id().cellType()==1 ||
-	  (*it).id().cellType()==2 || 
-	  (*it).id().cellType()==3 || 
-	  //(*it).id().cellType()==4 || 
-	  (*it).id().cellType()==5 )
-	continue;
-      if( (*it).energy() > minEnergy ){
-	std::pair<double, double> CellCentreXY;
-	CellCentreXY=cellVertice.GetCellCentreCoordinatesForPlots( (*it).id().layer(), 
-								   (*it).id().sensorIU(), 
-								   (*it).id().sensorIV(), 
-								   (*it).id().iu(), 
-								   (*it).id().iv(), 
-								   sensorSize);
-	(*it).setPosition( math::XYZPoint( CellCentreXY.first, 
-					   CellCentreXY.second, 
-					   layerZPosition[ ilayer ]) 
-			   );
-	hitcollayer.push_back( (*it) );
-	hitcol.push_back( (*it) );
-      }
-    }
-    if( hitcollayer.size() > 0 ){
-      std::vector<reco::HGCalTBCluster> clusters;
-      algo_HGCalTBClustering->Run(hitcollayer,clusters);
-      std::sort( clusters.begin(), clusters.end(), energySorter.sort );
-      //outClusterCol.insert( outClusterCol.end(), clusters.begin(), clusters.end() );
-      outClusterCol.push_back( (*clusters.begin()) );
-      _energyInCluster+=(*clusters.begin()).energy();
-      _clusterenergylayer[ ilayer ]=(*clusters.begin()).energy();
-      _clustersizelayer[ ilayer ]=(*clusters.begin()).size();
-    }
-  }
   Distance<HGCalTBRecHit,reco::HGCalTBCaloTrack> dist;
-  if( hitcol.size()>=4 ){
-    reco::HGCalTBCaloTrack track;
-    algo_HGCalTBCaloTrackFitter->Run( track,hitcol );
-    if( !track.isNull() ){
-      _theta = track.momentum().theta()*180/PI;
-      _phi = track.momentum().phi()*180/PI;
-      _x0 = track.vertex().x();
-      _y0 = track.vertex().y();
-      _ax = track.momentum().x();
-      _ay = track.momentum().y();    
-      for( std::vector<reco::HGCalTBCluster>::iterator it=outClusterCol.begin(); it!=outClusterCol.end(); ++it ){
-	for( std::vector< std::pair<DetId,float> >::const_iterator jt=(*it).hitsAndFractions().begin(); jt!=(*it).hitsAndFractions().end(); ++jt ){
-	  HGCalTBRecHit hit=(*hitcol.find(jt->first));
-	  int d=(int)fabs( dist.distance( hit,track )/HGCAL_TB_CELL::FULL_CELL_SIDE );
-	  if( d<maxTransverseProfile )
-	    _transverseprofile.at(d)+=hit.energy();
-	}
-      }
-    }
+  if( shower.size()>=4 ){
+    std::vector<HGCalTBDetId> detIds;
+    reco::WeightedLeastSquare<reco::HGCalTBClusterCollection> wls;
+    std::vector<float> trackPar;
+    std::vector<float> trackParError;
+    wls.run( shower, trackPar, trackParError);
+    float z0=layerZPosition.at(0);
+    Vector momentum = Vector(-1., 0., trackPar[1]).Cross( Vector(0., -1., trackPar[3]) );
+    Point vertex = Point( trackPar[0]+trackPar[1]*z0, trackPar[2]+trackPar[3]*z0, z0 );
+    reco::HGCalTBCaloTrack track( wls.chi2( shower, trackPar), shower.size(), vertex, momentum,/* cov,*/ detIds);
+    _theta = track.momentum().theta()*180/PI;
+    _phi = track.momentum().phi()*180/PI;
+    _x0 = track.vertex().x();
+    _y0 = track.vertex().y();
+    _ax = track.momentum().x();
+    _ay = track.momentum().y();    
   }
-  _nhit=hitcol.size();
-  for( std::vector<HGCalTBRecHit>::iterator it=hitcol.begin(); it!=hitcol.end(); ++it ){
-    _energylayer[ (*it).id().layer()-1 ] += (*it).energy();
+  
+  //  HGCalTBCellVertive cellVertice;
+  for( auto hit : *Rechits ){
+    _energylayer[ hit.id().layer()-1 ] += hit.energy();
+    //_meanx[ (*it).id().layer()-1 ]+=;
+    //_meany[ (*it).id().layer()-1 ]+=;
+    //_rmsx[ (*it).id().layer()-1 ];
+    //_rmsy[ (*it).id().layer()-1 ];
   }
   tree->Fill();
 }

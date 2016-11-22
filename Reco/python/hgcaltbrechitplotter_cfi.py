@@ -48,8 +48,3 @@ LayerSumAnalyzer = cms.EDAnalyzer("Layer_Sum_Analyzer",
                                   mapFile_CERN = cms.string('HGCal/CondObjects/data/map_CERN_8Layers_Sept2016.txt'),
                                   mapFile_FNAL = cms.string('')
                               )
-
-hgcalclusteringexample = cms.EDAnalyzer("ClusteringExampleAnalyzer",
-                                        HGCALTBRECHITS = cms.InputTag("hgcaltbrechits","","unpack" ),
-                                        Nlayers = cms.untracked.int32( 8 )
-                                        )
