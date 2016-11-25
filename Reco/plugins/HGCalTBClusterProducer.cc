@@ -63,7 +63,8 @@ void HGCalTBClusterProducer::produce(edm::Event& event, const edm::EventSetup& i
   std::map<int, HGCalTBRecHitCollection> hitmap;
 
   for(auto hit : *rechits ){
-    if( hitmap.find( hit.id().layer() )!=hitmap.end() && hit.energy()>_minEnergy )
+    if( hit.energy()<_minEnergy ) continue;
+    if( hitmap.find( hit.id().layer() )!=hitmap.end() )
       hitmap[ hit.id().layer() ].push_back(hit);
     else{
       HGCalTBRecHitCollection hitcol;
