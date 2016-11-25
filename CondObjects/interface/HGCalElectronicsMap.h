@@ -3,6 +3,7 @@
 
 #include "DataFormats/DetId/interface/DetId.h"
 #include <vector>
+#include <set>
 
 /** \class HGCalElectronicsMap
   *
@@ -24,6 +25,9 @@ public:
 	uint32_t detId2eid(DetId did) const;
 
 	void insert(uint32_t, DetId did);
+
+	std::set<int> const layersInMap();
+	std::set<int> const skirocsInMap();
 
 	size_t size() const
 	{

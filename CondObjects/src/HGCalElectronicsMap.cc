@@ -1,4 +1,6 @@
 #include "HGCal/CondObjects/interface/HGCalElectronicsMap.h"
+#include "HGCal/DataFormats/interface/HGCalTBDetId.h"
+#include "HGCal/DataFormats/interface/HGCalTBElectronicsId.h"
 #include <algorithm>
 
 class DetIdMatch
@@ -69,4 +71,20 @@ uint32_t HGCalElectronicsMap::eidAt(size_t i) const
 DetId HGCalElectronicsMap::didAt(size_t i) const
 {
 	return (i >= m_map.size()) ? (DetId(0)) : (DetId(m_map[i].detid));
+}
+
+std::set<int> const HGCalElectronicsMap::layersInMap()
+{
+  std::set<int> layerlist;
+  for( std::vector<MapEntry>::iterator it=m_map.begin(); it!=m_map.end(); ++it )
+    layerlist.insert( HGCalTBDetId( (*it).detid ).layer() );
+  return layerlist;
+}
+
+std::set<int> const HGCalElectronicsMap::skirocsInMap()
+{
+  std::set<int> skiroclist;
+  for( std::vector<MapEntry>::iterator it=m_map.begin(); it!=m_map.end(); ++it )
+    skiroclist.insert( HGCalTBElectronicsId( (*it).eid ).iskiroc() );
+  return skiroclist;
 }

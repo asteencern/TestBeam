@@ -26,6 +26,7 @@
 #include "HGCal/DataFormats/interface/HGCalTBElectronicsId.h"
 //#define DEBUG
 
+#include "HGCal/Reco/interface/RecHitCommonMode.h"
 
 #ifdef DEBUG
 #include <iostream>
@@ -36,6 +37,7 @@ class HGCalTBRecHitProducer : public edm::EDProducer
 
 public:
 	HGCalTBRecHitProducer(const edm::ParameterSet&);
+	~HGCalTBRecHitProducer();
 	virtual void produce(edm::Event&, const edm::EventSetup&);
 private:
 	std::string outputCollectionName;     ///<label name of collection made by this producer
@@ -46,9 +48,12 @@ private:
 	std::vector<double> _LG2HG_value;
 	std::string _mapFile;
 	int _layers_config;
+	float _commonModeThreshold;
+	RecHitCommonMode *rhcm;
 	struct {
 	  HGCalElectronicsMap emap_;
         } essource_;
+	
 };
 
 

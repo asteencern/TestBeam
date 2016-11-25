@@ -11,7 +11,8 @@ HGCalTBRecHitProducer::HGCalTBRecHitProducer(const edm::ParameterSet& cfg)
 	  _adcSaturation(cfg.getParameter<int>("adcSaturation")),
 	  //_LG2HG_value(cfg.getParameter<std::vector<double> >("LG2HG_CERN")),
 	  //_mapFile(cfg.getParameter<std::string>("mapFile")),
-	  _layers_config(cfg.getParameter<int>("layers_config"))
+	  _layers_config(cfg.getParameter<int>("layers_config")),
+	  _commonModeThreshold(cfg.getUntrackedParameter<double>("CommonModeThreshold",30))
 {
 	produces <HGCalTBRecHitCollection>(outputCollectionName);
 	//	std::cout << " >>> _LG2HG_value size = " << _LG2HG_value.size() << std::endl;
@@ -31,6 +32,12 @@ HGCalTBRecHitProducer::HGCalTBRecHitProducer(const edm::ParameterSet& cfg)
 	  throw cms::Exception("Unable to load electronics map");
 	};
 
+	rhcm = new RecHitCommonMode( essource_.emap_ );
+}
+
+HGCalTBRecHitProducer::~HGCalTBRecHitProducer()
+{
+  delete rhcm;
 }
 
 void HGCalTBRecHitProducer::produce(edm::Event& event, const edm::EventSetup& iSetup)
@@ -62,7 +69,7 @@ void HGCalTBRecHitProducer::produce(edm::Event& event, const edm::EventSetup& iS
 	if(_gainsHigh_filename != "") 	assert(condIO.load(_gainsHigh_filename, adcToGeV_high));
 	///\todo check if reading the conditions from file some channels are not in the file!
 #endif
-
+	HGCalTBRecHitCollection tmp;
 	for(auto digi_itr = digisHandle->begin(); digi_itr != digisHandle->end(); ++digi_itr) {
 #ifdef DEBUG
 		std::cout << "[RECHIT PRODUCER: digi]" << *digi_itr << std::endl;
@@ -102,8 +109,13 @@ void HGCalTBRecHitProducer::produce(edm::Event& event, const edm::EventSetup& iS
 #ifdef DEBUG
 			std::cout << recHit << std::endl;
 #endif
-			if(iSample == 0) rechits->push_back(recHit); ///\todo define an algorithm for the energy if more than 1 sample, code inefficient
+			if(iSample == 0) tmp.push_back(recHit); ///\todo define an algorithm for the energy if more than 1 sample, code inefficient
 		}
+	}
+	rhcm->evaluate( tmp,_commonModeThreshold );
+	for( auto hit:tmp ){
+	  HGCalTBRecHit recHit(hit.id(), hit.energy()-rhcm->getMeanCommonModeNoise(hit.id()), hit.energyLow(), hit.energyHigh(), hit.time());
+	  rechits->push_back(recHit);
 	}
 	event.put(rechits, outputCollectionName);
 }
