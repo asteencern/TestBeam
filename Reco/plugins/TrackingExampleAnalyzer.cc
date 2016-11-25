@@ -29,7 +29,6 @@
 #include "HGCal/CondObjects/interface/HGCalCondObjectTextIO.h"
 
 #include "HGCal/Reco/interface/HGCalTBCaloTrackingUtil.h"
-#include "HGCal/Reco/plugins/HGCalTBCommonModeSubtraction.h"
 
 using namespace std;
 
@@ -139,7 +138,6 @@ TrackingExampleAnalyzer::TrackingExampleAnalyzer(const edm::ParameterSet& iConfi
   tree->Branch( "meany","std::vector<double>",&_meany);
   tree->Branch( "rmsx","std::vector<double>",&_rmsx);
   tree->Branch( "rmsy","std::vector<double>",&_rmsy);
-  tree->Branch( "commonMode","std::vector<double>",&_commonMode);
   tree->Branch( "deltas","std::vector<double>",&_deltas);
   
   if( prepareTreeForDisplay ){
@@ -216,14 +214,12 @@ TrackingExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
   _meany.clear();
   _rmsx.clear();
   _rmsy.clear();
-  _commonMode.clear();
   _deltas.clear();
   _chi2 = _theta = _phi = _nhit = _x0 = _y0 = _ax = _ay = 0;
 
   HGCalTBCellVertices cellVertice;
   HGCalTBRecHitCollection coltmp[nlayers];
   HGCalTBRecHitCollection col;
-  HGCalTBCommonModeSubtraction subtraction( cmThreshold );
 
   edm::Handle<HGCalTBRecHitCollection> Rechits;
   event.getByToken(HGCalTBRecHitCollection_, Rechits);
@@ -237,15 +233,12 @@ TrackingExampleAnalyzer::analyze(const edm::Event& event, const edm::EventSetup&
 
       coltmp[ ilayer ].push_back( hit );
     }
-    subtraction.Run( coltmp[ ilayer ] );
-    _commonMode.push_back(subtraction.commonMode());
     _nhitlayer.push_back(0); 
     _energylayer.push_back(0.);
     _meanx.push_back(0.);
     _meany.push_back(0.);
     _rmsx.push_back(0.);
     _rmsy.push_back(0.);   
-    //    _commonMode.push_back(0.);
     for( std::vector<HGCalTBRecHit>::iterator it=coltmp[ ilayer ].begin(); it!=coltmp[ ilayer ].end(); ++it ){
       if( (*it).id().cellType()==1 ||
 	  (*it).id().cellType()==2 || 
