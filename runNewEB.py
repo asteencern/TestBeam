@@ -13,7 +13,7 @@ parser.add_option("-n", "--runNumber", dest="runNumber",type="int",
 parser.add_option("-t", "--runType", dest="runType",choices=["HGCRun","PED"],
                   help="run type",default="HGCRun")
 
-parser.add_option("-p", "--process", dest="process",choices=["reco", "pedestal", "tracking", "rechitplotter","display"],
+parser.add_option("-p", "--process", dest="process",choices=["reco", "pedestal", "tracking", "rechitplotter","display","ntuple"],
                   help="process to run",default="pedestal")
 
 parser.add_option("-s", "--nSpills", dest="nSpills",type="int",
@@ -94,6 +94,12 @@ elif options.process == "display":
     cmd+=" pedestalsLowGain="+pedestalsLowGain
     cmd+=" pedestalsHighGain="+pedestalsHighGain
     cmd+=" chainSequence=3"
+elif options.process == "ntuple":
+    pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
+    pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
+    cmd+=" pedestalsLowGain="+pedestalsLowGain
+    cmd+=" pedestalsHighGain="+pedestalsHighGain
+    cmd+=" chainSequence=7"
 
 print cmd
 os.system(cmd)
