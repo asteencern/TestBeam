@@ -195,9 +195,9 @@ NtupleProducer::analyze(const edm::Event& event, const edm::EventSetup& setup)
   
   HGCalTBCellVertices cellVertice;
   std::pair<double, double> CellCentreXY;
-  _nhit=Rechits->size();
   for( auto hit : *Rechits ){
     if( hit.energy()<minEnergy ) continue;
+    _nhit++;
     _cellID.push_back( hit.id() );
     CellCentreXY=cellVertice.GetCellCentreCoordinatesForPlots( hit.id().layer(), hit.id().sensorIU(), hit.id().sensorIV(), hit.id().iu(), hit.id().iv(), sensorSize);
     _x.push_back( CellCentreXY.first );
