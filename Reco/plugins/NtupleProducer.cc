@@ -203,7 +203,8 @@ NtupleProducer::analyze(const edm::Event& event, const edm::EventSetup& setup)
     _x.push_back( CellCentreXY.first );
     _y.push_back( CellCentreXY.second );
     _z.push_back( layerZPosition.at( hit.id().layer()-1 ) );
-    _energy.push_back( hit.energy()/skirocADCToMip[ hit.id().layer()-1 ]*mipToMeV );
+    HGCalTBElectronicsId eid= essource_.emap_.detId2eid(hit.id());
+    _energy.push_back( hit.energy()/skirocADCToMip[ eid.iskiroc()-1 ]*mipToMeV );
   }
 
   _nclusters=clusters->size();
@@ -211,7 +212,12 @@ NtupleProducer::analyze(const edm::Event& event, const edm::EventSetup& setup)
     _cluster_x.push_back( cluster.x() );
     _cluster_y.push_back( cluster.y() );
     _cluster_z.push_back( cluster.z() );
-    _cluster_energy.push_back( cluster.energy() );
+    float en=0.;
+    for( std::vector< std::pair<DetId, float> >::const_iterator it=cluster.hitsAndFractions().begin(); it!=cluster.hitsAndFractions().end(); ++it ){
+      HGCalTBElectronicsId eid= essource_.emap_.detId2eid( (*it).first );
+      en += (*it).second/skirocADCToMip[ eid.iskiroc()-1 ]*mipToMeV;
+    }
+    _cluster_energy.push_back( en );
     _cluster_size.push_back( cluster.size() );
   }
   tree->Fill();
