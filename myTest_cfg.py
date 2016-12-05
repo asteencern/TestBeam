@@ -156,7 +156,7 @@ elif (options.chainSequence == 3):
 elif (options.chainSequence == 4):
     process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbshower)
 elif (options.chainSequence == 5):
-    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbrechitsplotter_highgain_correlation_cm)
+    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.myhgcaltbrechitsplotter)
 elif (options.chainSequence == 6):
     process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.LayerSumAnalyzer)
 elif (options.chainSequence == 7):

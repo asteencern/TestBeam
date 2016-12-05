@@ -48,3 +48,8 @@ LayerSumAnalyzer = cms.EDAnalyzer("Layer_Sum_Analyzer",
                                   mapFile_CERN = cms.string('HGCal/CondObjects/data/map_CERN_8Layers_Sept2016.txt'),
                                   mapFile_FNAL = cms.string('')
                               )
+
+myhgcaltbrechitsplotter = cms.EDAnalyzer("MyRecHitPlotter",
+                                        HGCALTBRECHITS = cms.InputTag("hgcaltbrechits","","unpack" ),
+                                        signalMinEnergy = cms.untracked.double(500.0)
+                                        )

@@ -113,3 +113,7 @@ if options.process == "reco" and options.saveOnEos==1:
     os.system("")
     eosOutputFile="%s_Output_%06d.root"%(options.runType,options.runNumber)
     os.system("source /afs/cern.ch/project/eos/installation/user/etc/setup.sh; xrdcp -f Output.root root://eosuser.cern.ch//eos/user/a/asteen/hgcal/data/sep2016/shower-reco/"+eosOutputFile)
+if options.process == "rechitplotter" and options.saveOnEos==1:
+    os.system("")
+    eosOutputFile="%s_Output_%06d.root"%(options.runType,options.runNumber)
+    os.system("source /afs/cern.ch/project/eos/installation/user/etc/setup.sh; xrdcp -f Output.root root://eosuser.cern.ch//eos/user/a/asteen/hgcal/data/sep2016/rechitplotter/"+eosOutputFile)
