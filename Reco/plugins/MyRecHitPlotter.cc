@@ -23,6 +23,8 @@
 #include "HGCal/CondObjects/interface/HGCalElectronicsMap.h"
 #include "HGCal/CondObjects/interface/HGCalCondObjectTextIO.h"
 
+#include "HGCal/Reco/interface/RecHitCommonMode.h"
+
 using namespace std;
 
 struct layerInfo{
@@ -80,6 +82,7 @@ private:
   TTree* tree;
   std::map<int,cellInfo> cellInfos;
   std::map<int,layerInfo> layerInfos;
+  std::map<int,double> layerCM;
 
   std::map<int,double> layerEnergy;
   std::map<int,double> layerMaxEnergy;
@@ -94,6 +97,9 @@ private:
   //std::map<int, TH2F*> h_noise_vs_emax; //one per layer
   //
   //std::map<int, TH2F*> h_noise_vs_eventID; //one per layer
+
+  RecHitCommonMode *rhcm;
+
 };
 
 
@@ -104,6 +110,8 @@ MyRecHitPlotter::MyRecHitPlotter(const edm::ParameterSet& iConfig) :
   edm::Service<TFileService> fs;
   HGCalTBRecHitCollection_ = consumes<HGCalTBRecHitCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBRECHITS"));
   
+  std::cout << iConfig.dump() << std::endl;
+
   _evtID=0;
 
   HGCalCondObjectTextIO io(0);
@@ -123,6 +131,7 @@ MyRecHitPlotter::MyRecHitPlotter(const edm::ParameterSet& iConfig) :
     layerInfo lay;
     lay.id=layer;
     layerInfos.insert( std::pair<int,layerInfo>(layer,lay) );
+    layerCM.insert( std::pair<int,double>(layer,0.) );
     os.str("");
     os << "energy_layer" << layer;
     tree->Branch( os.str().c_str(),&layerInfos[layer].energy); 
@@ -135,6 +144,9 @@ MyRecHitPlotter::MyRecHitPlotter(const edm::ParameterSet& iConfig) :
     os.str("");
     os << "nhit_noise_layer" << layer;
     tree->Branch( os.str().c_str(),&layerInfos[layer].noiseCount); 
+    os.str("");
+    os << "cm_layer" << layer;
+    tree->Branch( os.str().c_str(),&layerCM[layer]); 
     for( int iskiroc=0; iskiroc<nskirocsperlayer; iskiroc++ ){
       for( int ichannel=0; ichannel<64; ichannel++ ){
 	int key=layer*1000+iskiroc*100+ichannel;
@@ -179,11 +191,12 @@ MyRecHitPlotter::MyRecHitPlotter(const edm::ParameterSet& iConfig) :
   //    }
   //  }
   //}
-  
+  rhcm = new RecHitCommonMode( essource_.emap_ );
 }
 
 MyRecHitPlotter::~MyRecHitPlotter()
 {
+  delete rhcm;
 }
 
 void
@@ -194,12 +207,17 @@ MyRecHitPlotter::analyze(const edm::Event& event, const edm::EventSetup& setup)
   
   for( std::map<int,cellInfo>::iterator  it=cellInfos.begin(); it!=cellInfos.end(); ++it )
     it->second.Reset();
-  for( std::map<int,layerInfo>::iterator  it=layerInfos.begin(); it!=layerInfos.end(); ++it )
+  for( std::map<int,layerInfo>::iterator  it=layerInfos.begin(); it!=layerInfos.end(); ++it ){
     it->second.Reset();
+    layerCM[it->first]=0.0;
+  }
   _nhit=0;
   _energytot=0.;
   
+  HGCalTBRecHitCollection tmp=(*Rechits);
+  rhcm->evaluate( tmp,30 );
   for( auto hit : *Rechits ){
+    hit.setEnergy( hit.energy()-rhcm->getMeanCommonModeNoise(hit.id()) );
     HGCalTBElectronicsId eid=HGCalTBElectronicsId( essource_.emap_.detId2eid(hit.id()) );
     int key=1000*hit.id().layer() + 100*((eid.iskiroc()-1)%2) + eid.ichan();
     if( hit.energy() > signalminenergy ){
@@ -233,6 +251,7 @@ MyRecHitPlotter::analyze(const edm::Event& event, const edm::EventSetup& setup)
   }
   
   for( auto layer : layersInMap ){
+    layerCM[layer] = rhcm->getMeanCommonModeNoise(layer,0);
     layerNoise[layer]/=layerNhitNoise[layer];
     // h_noise_vs_elayer[layer]->Fill(layerEnergy[layer],layerNoise[layer]);
     // h_noise_vs_emax[layer]->Fill(layerMaxEnergy[layer],layerNoise[layer]);
