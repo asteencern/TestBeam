@@ -28,7 +28,7 @@ HGCalTBClusterProducer::HGCalTBClusterProducer(const edm::ParameterSet& cfg) :
   sum+=2.14; vec.push_back( sum );
   //cern config 1 (5X0->15X0) is default
   _layerZPositions = cfg.getUntrackedParameter< std::vector<double> >("LayerZPositions",vec);
-  
+  std::cout << cfg.dump() << std::endl;
   produces <reco::HGCalTBClusterCollection>(_outputCollectionName);
   if( _runCluster7 ){
     std::ostringstream os( std::ostringstream::ate );
