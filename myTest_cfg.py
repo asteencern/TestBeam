@@ -164,5 +164,7 @@ elif (options.chainSequence == 6):
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.LayerSumAnalyzer)
 elif (options.chainSequence == 7):
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbntuple)
+elif (options.chainSequence == 8):
+    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbcalotracks)
 
 process.end = cms.EndPath(process.output)
