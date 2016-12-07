@@ -21,12 +21,12 @@ namespace reco{
     {
     public:
       //typedef math::Error<dimension>::type CovarianceMatrix;
-      HGCalTBCaloTrack( ){;}
+      HGCalTBCaloTrack( ){ isNull_=true;}
       HGCalTBCaloTrack( double _chi2, double _ndof, const Point &_vertex,
 			const Vector &_momentum,/* const CovarianceMatrix &_cov, */
 			std::vector<HGCalTBDetId> &_detIds);
       
-      bool isNull() const { return chi2_!=chi2_; }
+      bool isNull() const { return isNull_; }
       double chi2() const { return chi2_; }
       double ndof() const { return ndof_; }
       double normalisedChi2() const { return chi2_/ndof_; }
@@ -41,6 +41,7 @@ namespace reco{
       Point expectedTrackProjection(float z) const { return Point( vertex_.x()+momentum_.x()*z,vertex_.y()+momentum_.y()*z,z); }
 
     private:
+      bool isNull_;
       double chi2_;
       double ndof_; 
       
