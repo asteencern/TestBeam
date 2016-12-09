@@ -14,7 +14,8 @@ HGCalTBClusterProducer::HGCalTBClusterProducer(const edm::ParameterSet& cfg) :
   _runCluster7(cfg.getUntrackedParameter<bool>("runCluster7",true)),
   _runCluster19(cfg.getUntrackedParameter<bool>("runCluster19",true)),
   _sensorSize(cfg.getUntrackedParameter<int>("sensorSize",128)),
-  _minEnergy(cfg.getUntrackedParameter<double>("minEnergy",0.0))
+  _minEnergy(cfg.getUntrackedParameter<double>("minEnergy",0.0)),
+  _rmSpecialCells(cfg.getUntrackedParameter<bool>("RemoveSpecialCells",false))
 {
   float sum=0.;
   std::vector<double> vec;
@@ -63,7 +64,10 @@ void HGCalTBClusterProducer::produce(edm::Event& event, const edm::EventSetup& i
   std::map<int, HGCalTBRecHitCollection> hitmap;
 
   for(auto hit : *rechits ){
-    if( hit.energy()<_minEnergy ) continue;
+    if( hit.energy()<_minEnergy )
+       continue;
+    if( _rmSpecialCells && hit.id().cellType()!=0 && hit.id().cellType()!=4 )
+      continue;
     if( hitmap.find( hit.id().layer() )!=hitmap.end() )
       hitmap[ hit.id().layer() ].push_back(hit);
     else{
