@@ -87,7 +87,7 @@ elif options.process == "tracking":
     pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
     cmd+=" pedestalsLowGain="+pedestalsLowGain
     cmd+=" pedestalsHighGain="+pedestalsHighGain
-    cmd+=" chainSequence=2"
+    cmd+=" chainSequence=8"
 elif options.process == "display":
     pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
     pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"

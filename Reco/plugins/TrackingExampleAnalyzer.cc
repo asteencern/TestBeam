@@ -120,6 +120,8 @@ TrackingExampleAnalyzer::TrackingExampleAnalyzer(const edm::ParameterSet& iConfi
   edm::Service<TFileService> fs;
   HGCalTBRecHitCollection_ = consumes<HGCalTBRecHitCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBRECHITS"));
   
+  std::cout << iConfig.dump() << std::endl;
+  
   tree = fs->make<TTree>("tree", "HGCAL TB variables tree");
   tree->Branch( "evtID",&_evtID ); 
   tree->Branch( "chi2",&_chi2 ); 

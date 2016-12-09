@@ -165,6 +165,7 @@ elif (options.chainSequence == 6):
 elif (options.chainSequence == 7):
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbntuple)
 elif (options.chainSequence == 8):
-    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbcalotracks)
+    process.hgcaltbcalotracks.doTrackCleaning=True
+    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbcalotracks*process.hgcaltbtrackanalyzer)
 
 process.end = cms.EndPath(process.output)
