@@ -2,9 +2,6 @@
 #include "HGCal/Reco/interface/HGCalTBCaloTrackingUtil.h"
 #include "HGCal/DataFormats/interface/HGCalTBDetId.h"
 
-#include "HGCal/DataFormats/interface/HGCalTBRecHitCollections.h"
-#include "HGCal/Geometry/interface/HGCalTBCellVertices.h"
-
 HGCalTBCaloTrackProducer::HGCalTBCaloTrackProducer(const edm::ParameterSet& cfg) : 
   _outputCollectionName(cfg.getParameter<std::string>("OutputCollectionName")),
   _doTrackCleaning(cfg.getUntrackedParameter<bool>("doTrackCleaning",false)),
@@ -37,13 +34,10 @@ void HGCalTBCaloTrackProducer::produce(edm::Event& event, const edm::EventSetup&
   std::auto_ptr<reco::HGCalTBCaloTrackCollection> tracks(new reco::HGCalTBCaloTrackCollection);
   edm::Handle<reco::HGCalTBClusterCollection> clusters;
   event.getByToken(HGCalTBClusterCollection_, clusters);
-  edm::Handle<HGCalTBRecHitCollection> rechits;
-  event.getByToken(HGCalTBRechitCollection_, rechits);
 
   reco::HGCalTBClusterCollection tmp;
   std::set<int> touchedLayers;
   std::vector<HGCalTBDetId> detIds;
-  HGCalTBCellVertices cellVertice;
   for( auto cluster : *clusters ){
     if( cluster.energy()<_minEnergy || cluster.energy()>_maxEnergy ) 
       continue;
