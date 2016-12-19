@@ -7,6 +7,10 @@ namespace reco
 				     const Vector &_momentum,/* const CovarianceMatrix &_cov, */
 				     std::vector<HGCalTBDetId> &_decIds) 
   {
+    if( _chi2!=_chi2 )
+      return;
+
+    isNull_ = false;
     chi2_ = _chi2;
     ndof_ = _ndof; 
     

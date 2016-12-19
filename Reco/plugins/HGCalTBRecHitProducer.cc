@@ -12,7 +12,8 @@ HGCalTBRecHitProducer::HGCalTBRecHitProducer(const edm::ParameterSet& cfg)
 	  //_LG2HG_value(cfg.getParameter<std::vector<double> >("LG2HG_CERN")),
 	  //_mapFile(cfg.getParameter<std::string>("mapFile")),
 	  _layers_config(cfg.getParameter<int>("layers_config")),
-	  _commonModeThreshold(cfg.getUntrackedParameter<double>("CommonModeThreshold",30))
+	  _commonModeThreshold(cfg.getUntrackedParameter<double>("CommonModeThreshold",30)),
+	  _doCommonMode(cfg.getUntrackedParameter<bool>("doCommonMode",true))
 {
 	produces <HGCalTBRecHitCollection>(outputCollectionName);
 	//	std::cout << " >>> _LG2HG_value size = " << _LG2HG_value.size() << std::endl;
@@ -25,19 +26,23 @@ HGCalTBRecHitProducer::HGCalTBRecHitProducer(const edm::ParameterSet& cfg)
 	  _LG2HG_value = cfg.getParameter<std::vector<double> >("LG2HG_CERN");
 	  _mapFile = cfg.getParameter<std::string>("mapFile_CERN");
 	}
+	
+	std::cout << cfg.dump() << std::endl;
 
 	HGCalCondObjectTextIO io(0);
 	edm::FileInPath fip(_mapFile);
         if (!io.load(fip.fullPath(), essource_.emap_)) {
 	  throw cms::Exception("Unable to load electronics map");
 	};
-
-	rhcm = new RecHitCommonMode( essource_.emap_ );
+	
+	if( _doCommonMode )
+	  rhcm = new RecHitCommonMode( essource_.emap_ );
 }
 
 HGCalTBRecHitProducer::~HGCalTBRecHitProducer()
 {
-  delete rhcm;
+  if( _doCommonMode )
+    delete rhcm;
 }
 
 void HGCalTBRecHitProducer::produce(edm::Event& event, const edm::EventSetup& iSetup)
@@ -112,11 +117,15 @@ void HGCalTBRecHitProducer::produce(edm::Event& event, const edm::EventSetup& iS
 			if(iSample == 0) tmp.push_back(recHit); ///\todo define an algorithm for the energy if more than 1 sample, code inefficient
 		}
 	}
-	rhcm->evaluate( tmp,_commonModeThreshold );
-	for( auto hit:tmp ){
-	  HGCalTBRecHit recHit(hit.id(), hit.energy()-rhcm->getMeanCommonModeNoise(hit.id()), hit.energyLow(), hit.energyHigh(), hit.time());
-	  rechits->push_back(recHit);
+	if( _doCommonMode ){
+	  rhcm->evaluate( tmp,_commonModeThreshold );
+	  for( auto hit:tmp ){
+	    HGCalTBRecHit recHit(hit.id(), hit.energy()-rhcm->getMeanCommonModeNoise(hit.id()), hit.energyLow(), hit.energyHigh(), hit.time());
+	    rechits->push_back(recHit);
+	  }
 	}
+	else
+	  for( auto hit:tmp ) rechits->push_back(hit);
 	event.put(rechits, outputCollectionName);
 }
 // Should there be a destructor ??

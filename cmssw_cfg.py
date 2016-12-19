@@ -124,10 +124,12 @@ process.output = cms.OutputModule("PoolOutputModule",
 process.TFileService = cms.Service("TFileService", fileName = cms.string("Output.root"))
 
 if(options.configuration == "1"):
+    process.BadSpillFilter.layers_config = cms.int32(1)
     process.LayerSumAnalyzer.CERN_8layers_config = cms.int32(1)
     process.hgcaltbtrackingexample.CERN_8layers_config = cms.untracked.int32(0)
     process.hgcaltbshower.CERN_8layers_config = cms.untracked.int32(0)
 elif(options.configuration == "2"):
+    process.BadSpillFilter.layers_config = cms.int32(2)
     process.LayerSumAnalyzer.CERN_8layers_config = cms.int32(2)
     process.hgcaltbtrackingexample.CERN_8layers_config = cms.untracked.int32(1)
     process.hgcaltbshower.CERN_8layers_config = cms.untracked.int32(1)
@@ -144,18 +146,19 @@ process.hgcaltbtrackingexample.CMThreshold = cms.untracked.int32(100)
 process.hgcaltbeventdisplay.minEnergy = cms.untracked.double(100)
 process.hgcaltbeventdisplay.CMThreshold = cms.untracked.int32(100)
 
-process.hgcaltbshower.minEnergy = cms.untracked.double(100)
-process.hgcaltbshower.CMThreshold = cms.untracked.int32(40)
-
 if (options.chainSequence == 1):
-    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbdigisplotter)
+    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbdigisplotter)
 elif (options.chainSequence == 2):
-    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbntuple)
+    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbntuple)
 elif (options.chainSequence == 3):
-    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbeventdisplay)
+    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbeventdisplay)
 elif (options.chainSequence == 4):
-    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbtrackingexample)
+    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbtrackingexample)
 elif (options.chainSequence == 5):
-    process.p =cms.Path(process.hgcaltbdigis*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbshower)
+    process.hgcaltbcalotracks.maxEnergy=1e6
+    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbcalotracks*process.hgcaltbshower)
+elif (options.chainSequence == 6):
+    process.hgcaltbcalotracks.doTrackCleaning=True
+    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbcalotracks*process.hgcaltbtrackanalyzer)
 
 process.end = cms.EndPath(process.output)

@@ -49,6 +49,7 @@ private:
 	std::string _mapFile;
 	int _layers_config;
 	float _commonModeThreshold;
+	bool _doCommonMode;
 	RecHitCommonMode *rhcm;
 	struct {
 	  HGCalElectronicsMap emap_;

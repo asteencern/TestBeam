@@ -13,5 +13,6 @@ hgcaltbrechits = cms.EDProducer("HGCalTBRecHitProducer",
                                 mapFile_CERN = cms.string('HGCal/CondObjects/data/map_CERN_8Layers_Sept2016.txt'),
                                 mapFile_FNAL = cms.string(''),
                                 layers_config = cms.int32(-1),
-                                CommonModeThreshold = cms.untracked.double(100)
+                                CommonModeThreshold = cms.untracked.double(20),
+                                doCommonMode = cms.untracked.bool(True)
                               )
