@@ -146,9 +146,6 @@ process.hgcaltbtrackingexample.CMThreshold = cms.untracked.int32(100)
 process.hgcaltbeventdisplay.minEnergy = cms.untracked.double(100)
 process.hgcaltbeventdisplay.CMThreshold = cms.untracked.int32(100)
 
-process.hgcaltbshower.minEnergy = cms.untracked.double(100)
-process.hgcaltbshower.CMThreshold = cms.untracked.int32(40)
-
 if (options.chainSequence == 1):
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbdigisplotter)
 elif (options.chainSequence == 2):
@@ -156,7 +153,8 @@ elif (options.chainSequence == 2):
 elif (options.chainSequence == 3):
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbeventdisplay)
 elif (options.chainSequence == 4):
-    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbshower)
+    process.hgcaltbcalotracks.maxEnergy=1e6
+    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbcalotracks*process.hgcaltbshower)
 elif (options.chainSequence == 5):
     process.hgcaltbrechits.doCommonMode=False
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.myhgcaltbrechitsplotter)
