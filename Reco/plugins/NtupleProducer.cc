@@ -41,10 +41,8 @@ private:
   int CERN_8layers_config;
   double minEnergy;
   int sensorSize;
-  double mipToMeV; //obatained from simulation
 
   std::vector<float> layerZPosition;
-  std::vector<double> skirocADCToMip;
 
   TTree* tree;
   int _evtID;
@@ -76,8 +74,7 @@ private:
 NtupleProducer::NtupleProducer(const edm::ParameterSet& iConfig) :
   CERN_8layers_config( iConfig.getUntrackedParameter<int>("CERN_8layers_config",0) ),
   minEnergy( iConfig.getUntrackedParameter<double>("minEnergy",30) ),
-  sensorSize( iConfig.getUntrackedParameter<int>("sensorSize",128) ),
-  mipToMeV( iConfig.getUntrackedParameter<double>("MIPToMeV",52.81e-03) )
+  sensorSize( iConfig.getUntrackedParameter<int>("sensorSize",128) )
 {
   usesResource("TFileService");
   edm::Service<TFileService> fs;
@@ -124,20 +121,6 @@ NtupleProducer::NtupleProducer(const edm::ParameterSet& iConfig) :
     sum+=5.60; layerZPosition.push_back( sum );
   }
 
-  double adctomip[]={16.95,16.6933,16.0208,17.0226,17.6833,17.1882,16.4708,15.9629,17.1542,16.7324,16.5,17.5457,15.3652,16.273,16.4111,15.2706};
-  std::vector<double> vec; vec.insert( vec.begin(), adctomip, adctomip+16 );
-  skirocADCToMip = iConfig.getUntrackedParameter< std::vector<double> >("skirocADCToMip",vec);
-
-  if( skirocADCToMip.size() != skirocs.size() || layerZPosition.size()!=layers.size() ){
-    std::cout << "problem in parameter initialisation : \n"
-	      << "nlayers.size() = " << layers.size() << "=?="
-	      << "layerZPosition.size() = " << layerZPosition.size() << "\n"
-	      << "skirocADCToMip.size() = " << skirocADCToMip.size() << "=?="
-	      << "skirocs.size() = " << skirocs.size() << "=?="
-	      << "=======> throw" << std::endl;
-    throw;
-  }
-  
   _evtID = 0;
   tree = fs->make<TTree>("HGC_Events", "HGCAL TB variables tree");
   tree->Branch("evtID",&_evtID);
@@ -203,7 +186,7 @@ NtupleProducer::analyze(const edm::Event& event, const edm::EventSetup& setup)
     _x.push_back( CellCentreXY.first );
     _y.push_back( CellCentreXY.second );
     _z.push_back( layerZPosition.at( hit.id().layer()-1 ) );
-    _energy.push_back( hit.energy()/skirocADCToMip[ hit.id().layer()-1 ]*mipToMeV );
+    _energy.push_back( hit.energy() );
   }
 
   _nclusters=clusters->size();

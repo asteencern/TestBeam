@@ -93,7 +93,7 @@ elif options.process == "display":
     pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
     cmd+=" pedestalsLowGain="+pedestalsLowGain
     cmd+=" pedestalsHighGain="+pedestalsHighGain
-    cmd+=" chainSequence=3"
+    cmd+=" chainSequence=3 maxEvents=10"
 elif options.process == "ntuple":
     pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
     pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"

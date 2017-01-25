@@ -131,6 +131,7 @@ if(options.configuration == "1"):
     process.hgcaltbclusters.LayerZPositions= cms.untracked.vdouble(0.0, 5.35, 10.52, 14.44, 18.52, 19.67, 23.78, 25.92)
     process.hgcaltbcalotracks.LayerZPositions= cms.untracked.vdouble(0.0, 5.35, 10.52, 14.44, 18.52, 19.67, 23.78, 25.92)
     process.hgcaltbshower.CERN_8layers_config=cms.untracked.int32(0)
+    process.hgcaltbntuple.CERN_8layers_config=cms.untracked.int32(0)
 
 elif(options.configuration == "2"):
     process.BadSpillFilter.layers_config = cms.int32(2)
@@ -140,7 +141,8 @@ elif(options.configuration == "2"):
     process.hgcaltbclusters.LayerZPositions= cms.untracked.vdouble(0.0, 4.67, 9.84, 14.27, 19.25, 20.4, 25.8, 31.4)
     process.hgcaltbcalotracks.LayerZPositions= cms.untracked.vdouble(0.0, 4.67, 9.84, 14.27, 19.25, 20.4, 25.8, 31.4)
     process.hgcaltbshower.CERN_8layers_config=cms.untracked.int32(1)
-                                   
+    process.hgcaltbntuple.CERN_8layers_config=cms.untracked.int32(1)
+
 #process.hgcaltbrechits.adcSaturation=cms.int32(1800)
 #process.hgcaltbrechits.LG2HG=cms.double(9.75)
 

@@ -8,6 +8,6 @@ hgcaltbcalotracks = cms.EDProducer("HGCalTBCaloTrackProducer",
                                    doTrackCleaning = cms.untracked.bool( False ),
                                    maxDistanceToRecoTrack = cms.untracked.double( 2.0 ),
                                    minTouchedLayers = cms.untracked.int32( 4 ),
-                                   minEnergy = cms.untracked.double( 9.0 ),
-                                   maxEnergy = cms.untracked.double( 60.0 )
+                                   minEnergy = cms.untracked.double(3.1e-5), #3.1e-5=~0.6 MIP=~9 ADC count
+                                   maxEnergy = cms.untracked.double( 2.1e-4 ) #2.1e-4=~4.0 MIP=~62 ADC count
                                  )

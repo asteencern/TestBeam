@@ -60,12 +60,9 @@ private:
   int CERN_8layers_config;
   double energyShowerThreshold ;
   float maxTransverseProfile;
-  double mpvToMip; //muons at sps (few GeV) are not real MIP (~500 MeV Muon) -> need to correct
-  double mipToGeV; //obtained from simulation
 
   std::vector<float> layerZPosition;
   std::vector<float> layerZX0;
-  std::vector<double> skirocADCToMip;
 
   TTree* tree;
   int _evtID;
@@ -102,9 +99,7 @@ ShowerAnalyzer::ShowerAnalyzer(const edm::ParameterSet& iConfig) :
   sensorSize( iConfig.getUntrackedParameter<int>("SensorSize",128) ),
   CERN_8layers_config( iConfig.getUntrackedParameter<int>("CERN_8layers_config",0) ),
   energyShowerThreshold( iConfig.getUntrackedParameter<double>("energyShowerThreshold",200) ),
-  maxTransverseProfile( iConfig.getUntrackedParameter<double>("maxTransverseProfile",20) ),
-  mpvToMip( iConfig.getUntrackedParameter<double>("MPVToMIP",0.94) ),
-  mipToGeV( iConfig.getUntrackedParameter<double>("MIPToMeV",52.81e-06) )
+  maxTransverseProfile( iConfig.getUntrackedParameter<double>("maxTransverseProfile",20) )
 {
   HGCalTBRecHitCollection_ = consumes<HGCalTBRecHitCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBRECHITS"));
   HGCalTBClusterCollection_ = consumes<reco::HGCalTBClusterCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBCLUSTERS"));
@@ -112,20 +107,6 @@ ShowerAnalyzer::ShowerAnalyzer(const edm::ParameterSet& iConfig) :
   // HGCalTBClusterCollection7_ = consumes<reco::HGCalTBClusterCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBCLUSTERS7"));
   // HGCalTBClusterCollection19_ = consumes<reco::HGCalTBClusterCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBCLUSTERS19"));
 
-  double adctomip[]={16.9426, 16.6226, 15.8083, 16.9452, 17.95, 16.6588, 16.6542, 15.4429, 17.3042, 16.5757, 16.35, 17.4657, 15.3609, 16.2676, 16.5, 15.1118};
-  for( unsigned int i=0; i<sizeof(adctomip)/sizeof(double); i++ )
-    adctomip[i]*=mpvToMip;
-  std::vector<double> vec; vec.insert( vec.begin(), adctomip, adctomip+16 );
-  skirocADCToMip = iConfig.getUntrackedParameter< std::vector<double> >("skirocADCToMip",vec);
-
-  if( skirocADCToMip.size() != (unsigned int)nlayers*nskirocsperlayer ){
-    std::cout << "problem in parameter initialisation : \n"
-	      << "nlayers = " << nlayers << "\n"
-	      << "nskirocsperlayer = " << nskirocsperlayer << "\n"
-	      << "skirocADCToMip.size() = " << skirocADCToMip.size() << " while it should be equal to " << nlayers*nskirocsperlayer << " (nlayers*nskirocsperlayer) \n"
-	      << "=======> throw" << std::endl;
-    throw;
-  }
   std::cout << iConfig.dump() << std::endl;
 
   usesResource("TFileService");
@@ -273,16 +254,13 @@ ShowerAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup)
       DistanceBetweenTrackAndPoint dist;
       for( std::vector<HGCalTBDetId>::iterator it=track.getDetIds().begin(); it!=track.getDetIds().end(); ++it ){
 	HGCalTBRecHit hit=(*(*Rechits).find(*it));
-	uint32_t EID = essource_.emap_.detId2eid( hit.id() );
-	HGCalTBElectronicsId eid(EID);
-	int skiroc=eid.iskiroc()-1;
-	_energylayer[ hit.id().layer()-1 ] += hit.energy()/skirocADCToMip[skiroc]*mipToGeV;
-	_energy+=hit.energy()/skirocADCToMip[skiroc]*mipToGeV;
+	_energylayer[ hit.id().layer()-1 ] += hit.energy();
+	_energy+=hit.energy();
 	std::pair<double,double> xy=cellVertice.GetCellCentreCoordinatesForPlots( (*it).layer(), (*it).sensorIU(), (*it).sensorIV(), (*it).iu(), (*it).iv(), sensorSize);
 	math::XYZPoint xyz(xy.first,xy.second,layerZPosition.at( (*it).layer()-1 ));
 	int ring = (int)( 10*dist.distance(track,xyz)/HGCAL_TB_CELL::FULL_CELL_SIDE );
 	if( ring<maxTransverseProfile )
-	  _transverseprofile[ring]+=hit.energy()/skirocADCToMip[skiroc]*mipToGeV;
+	  _transverseprofile[ring]+=hit.energy();
       }
       //for( auto cluster : shower ){
       //	for( std::vector< std::pair<DetId,float> >::const_iterator it=cluster.hitsAndFractions().begin(); it!=cluster.hitsAndFractions().end(); ++it ){
@@ -307,7 +285,7 @@ ShowerAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup)
 	  math::XYZPoint xyz(xy.first,xy.second,layerZPosition.at( detId.layer()-1 ));
 	  int ring = (int)( 10*std::sqrt((seedxyz-xyz).mag2())/HGCAL_TB_CELL::FULL_CELL_SIDE );
 	  if( ring<maxTransverseProfile )
-	    _clustertransverseprofile[ring]+=(*it).second*cluster.energy();///skirocADCToMip[skiroc];
+	    _clustertransverseprofile[ring]+=(*it).second*cluster.energy();
 	}
       }
     }

@@ -50,6 +50,9 @@ private:
 	int _layers_config;
 	float _commonModeThreshold;
 	bool _doCommonMode;
+	std::vector<double> _skirocADCToMip;
+	double _mpvToMip; //muons at sps (few GeV) are not real MIP (~500 MeV Muon) -> need to correct
+	double _mipToGeV; //obtained from simulation
 	RecHitCommonMode *rhcm;
 	struct {
 	  HGCalElectronicsMap emap_;

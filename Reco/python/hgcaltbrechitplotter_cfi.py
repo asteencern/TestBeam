@@ -50,6 +50,6 @@ LayerSumAnalyzer = cms.EDAnalyzer("Layer_Sum_Analyzer",
                               )
 
 myhgcaltbrechitsplotter = cms.EDAnalyzer("MyRecHitPlotter",
-                                        HGCALTBRECHITS = cms.InputTag("hgcaltbrechits","","unpack" ),
-                                        signalMinEnergy = cms.untracked.double(500.0)
-                                        )
+                                         HGCALTBRECHITS = cms.InputTag("hgcaltbrechits","","unpack" ),
+                                         signalMinEnergy = cms.untracked.double(3.1e-5)
+                                         )

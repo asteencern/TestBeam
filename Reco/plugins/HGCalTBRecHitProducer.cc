@@ -12,8 +12,9 @@ HGCalTBRecHitProducer::HGCalTBRecHitProducer(const edm::ParameterSet& cfg)
 	  //_LG2HG_value(cfg.getParameter<std::vector<double> >("LG2HG_CERN")),
 	  //_mapFile(cfg.getParameter<std::string>("mapFile")),
 	  _layers_config(cfg.getParameter<int>("layers_config")),
-	  _commonModeThreshold(cfg.getUntrackedParameter<double>("CommonModeThreshold",30)),
-	  _doCommonMode(cfg.getUntrackedParameter<bool>("doCommonMode",true))
+	  _commonModeThreshold(cfg.getUntrackedParameter<double>("CommonModeThreshold",2)), // in MIP
+	  _doCommonMode(cfg.getUntrackedParameter<bool>("doCommonMode",true)),
+	  _mipToGeV(cfg.getUntrackedParameter<double>("MIPToMeV",52.81e-06)) //obtained from simulation
 {
 	produces <HGCalTBRecHitCollection>(outputCollectionName);
 	//	std::cout << " >>> _LG2HG_value size = " << _LG2HG_value.size() << std::endl;
@@ -37,6 +38,11 @@ HGCalTBRecHitProducer::HGCalTBRecHitProducer(const edm::ParameterSet& cfg)
 	
 	if( _doCommonMode )
 	  rhcm = new RecHitCommonMode( essource_.emap_ );
+
+	double adctomip[]={15.926 ,15.6252 ,14.8598 ,15.9285 ,16.873 ,15.6593 ,15.6549 ,14.5163 ,16.2659 ,15.5812 ,15.369 ,16.4178 ,14.4392 ,15.2915 ,15.51 ,14.2051};
+	std::vector<double> vec; vec.insert( vec.begin(), adctomip, adctomip+16 );
+	_skirocADCToMip = cfg.getUntrackedParameter< std::vector<double> >("skirocADCToMip",vec);
+	_commonModeThreshold=_commonModeThreshold*_mipToGeV;
 }
 
 HGCalTBRecHitProducer::~HGCalTBRecHitProducer()
@@ -106,7 +112,7 @@ void HGCalTBRecHitProducer::produce(edm::Event& event, const edm::EventSetup& iS
 
 
 			energy = ( energyHigh < _adcSaturation ) ? energyHigh : energyLow * _LG2HG_value.at(eid.iskiroc() - 1);
-			recHit.setEnergy(energy);
+			recHit.setEnergy(energy/_skirocADCToMip[ eid.iskiroc()-1 ]*_mipToGeV);
 
 			if(digi[iSample].adcHigh() > _adcSaturation) recHit.setFlag(HGCalTBRecHit::kHighGainSaturated);
 			if(digi[iSample].adcLow() > _adcSaturation) recHit.setFlag(HGCalTBRecHit::kLowGainSaturated);
