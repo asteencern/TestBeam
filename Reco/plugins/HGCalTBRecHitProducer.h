@@ -53,6 +53,7 @@ private:
 	std::vector<double> _skirocADCToMip;
 	double _mpvToMip; //muons at sps (few GeV) are not real MIP (~500 MeV Muon) -> need to correct
 	double _mipToGeV; //obtained from simulation
+	bool _convertEnergyToGeV;
 	RecHitCommonMode *rhcm;
 	struct {
 	  HGCalElectronicsMap emap_;
