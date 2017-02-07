@@ -50,6 +50,14 @@ std::set<HGCalTBDetId> HGCalTBTopology::getNeighboringCellsDetID(HGCalTBDetId de
 {
 	int layer=detid.layer();
 	std::set<HGCalTBDetId> detids;
+	if( detid.cellType()==1 ){
+	  HGCalTBDetId id(layer, detid.sensorIU(), detid.sensorIV(), detid.iu(), detid.iv(), 4);
+	  detids.insert(id);
+	}
+	if( detid.cellType()==4 ){
+	  HGCalTBDetId id(layer, detid.sensorIU(), detid.sensorIV(), detid.iu(), detid.iv(), 1);
+	  detids.insert(id);
+	}
 	for(int u=-maxDistance; u<=maxDistance; u++){
 		for(int v=-maxDistance; v<=maxDistance; v++){
 			if( (u==0 && v==0) || abs(u+v)>maxDistance ) continue;
