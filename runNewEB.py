@@ -13,7 +13,7 @@ parser.add_option("-n", "--runNumber", dest="runNumber",type="int",
 parser.add_option("-t", "--runType", dest="runType",choices=["HGCRun","PED"],
                   help="run type",default="HGCRun")
 
-parser.add_option("-p", "--process", dest="process",choices=["reco", "pedestal", "tracking", "rechitplotter","display","ntuple"],
+parser.add_option("-p", "--process", dest="process",choices=["reco", "pedestal", "tracking", "rechitplotter","display","ntuple","efficiency"],
                   help="process to run",default="pedestal")
 
 parser.add_option("-s", "--nSpills", dest="nSpills",type="int",
@@ -100,6 +100,12 @@ elif options.process == "ntuple":
     cmd+=" pedestalsLowGain="+pedestalsLowGain
     cmd+=" pedestalsHighGain="+pedestalsHighGain
     cmd+=" chainSequence=7"
+elif options.process == "efficiency":
+    pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
+    pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
+    cmd+=" pedestalsLowGain="+pedestalsLowGain
+    cmd+=" pedestalsHighGain="+pedestalsHighGain
+    cmd+=" chainSequence=9"
 
 print cmd
 os.system(cmd)
@@ -117,3 +123,7 @@ if options.process == "rechitplotter" and options.saveOnEos==1:
     os.system("")
     eosOutputFile="%s_Output_%06d.root"%(options.runType,options.runNumber)
     os.system("source /afs/cern.ch/project/eos/installation/user/etc/setup.sh; xrdcp -f Output.root root://eosuser.cern.ch//eos/user/a/asteen/hgcal/data/sep2016/rechitplotter/"+eosOutputFile)
+if options.process == "efficiency" and options.saveOnEos==1:
+    os.system("")
+    eosOutputFile="%s_Output_%06d.root"%(options.runType,options.runNumber)
+    os.system("source /afs/cern.ch/project/eos/installation/user/etc/setup.sh; xrdcp -f Output.root root://eosuser.cern.ch//eos/user/a/asteen/hgcal/data/sep2016/efficiency/"+eosOutputFile)
