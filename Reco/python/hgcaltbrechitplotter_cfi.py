@@ -15,6 +15,7 @@ hgcaltbeventdisplay = cms.EDAnalyzer("EventDisplay",
                                      HGCALTBCLUSTERS19 = cms.InputTag("hgcaltbclusters","19","unpack" ),
                                      Nlayers = cms.untracked.int32( 8 ),
                                      SensorSize = cms.untracked.int32( 128 ),
+                                     skipSpills = cms.untracked.uint32( 6 )
                                      #minEnergy = cms.untracked.double( 50 ),
                                      #CMThreshold = cms.untracked.int32( 30 )
                                      )

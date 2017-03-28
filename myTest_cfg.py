@@ -140,10 +140,10 @@ elif(options.configuration == "2"):
     process.LayerSumAnalyzer.CERN_8layers_config = cms.int32(2)
     process.hgcaltbtrackingexample.CERN_8layers_config = cms.untracked.int32(1)
     process.hgcaltbshower.CERN_8layers_config = cms.untracked.int32(1)
-    process.hgcaltbclusters.LayerZPositions= cms.untracked.vdouble(0.0, 4.67, 9.84, 14.27, 19.25, 20.4, 25.8, 31.4)
-    process.hgcaltbcalotracks.LayerZPositions= cms.untracked.vdouble(0.0, 4.67, 9.84, 14.27, 19.25, 20.4, 25.8, 31.4)
-    process.hgcaltbtrackanalyzer.LayerZPositions= cms.untracked.vdouble(0.0, 4.67, 9.84, 14.27, 19.25, 20.4, 25.8, 31.4)
-    process.hgcaltbcellefficiency.LayerZPositions= cms.untracked.vdouble(0.0, 4.67, 9.84, 14.27, 19.25, 20.4, 25.8, 31.4)
+    process.hgcaltbclusters.LayerZPositions= cms.untracked.vdouble(0, 3.762, 7.92404, 11.987808, 15.265312, 17.014112, 19.80828, 25.039688)
+    process.hgcaltbcalotracks.LayerZPositions= cms.untracked.vdouble(0, 3.762, 7.92404, 11.987808, 15.265312, 17.014112, 19.80828, 25.039688)
+    process.hgcaltbtrackanalyzer.LayerZPositions= cms.untracked.vdouble(0, 3.762, 7.92404, 11.987808, 15.265312, 17.014112, 19.80828, 25.039688)
+    process.hgcaltbcellefficiency.LayerZPositions= cms.untracked.vdouble(0, 3.762, 7.92404, 11.987808, 15.265312, 17.014112, 19.80828, 25.039688)
     process.hgcaltbshower.CERN_8layers_config=cms.untracked.int32(1)
     process.hgcaltbntuple.CERN_8layers_config=cms.untracked.int32(1)
 
@@ -156,21 +156,23 @@ process.hgcaltbtrackingexample.PrepareTreeForDisplay = cms.untracked.bool(False)
 process.hgcaltbtrackingexample.doTrackCleaning = cms.untracked.bool(True)
 process.hgcaltbtrackingexample.CMThreshold = cms.untracked.int32(100)
 
-process.hgcaltbeventdisplay.minEnergy = cms.untracked.double(100)
-process.hgcaltbeventdisplay.CMThreshold = cms.untracked.int32(100)
-
 if (options.chainSequence == 1):
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbdigisplotter)
 elif (options.chainSequence == 2):
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbtrackingexample)
 elif (options.chainSequence == 3):
+    process.hgcaltbrechits.ConvertEnergyToGeV = False
+    process.hgcaltbrechits.CommonModeThreshold = 30
+    process.hgcaltbclusters.minEnergy = -100.0
+    process.hgcaltbeventdisplay.skipSpills = cms.untracked.uint32( 0 )
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbeventdisplay)
 elif (options.chainSequence == 4):
     process.hgcaltbcalotracks.maxEnergy=1e6
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbcalotracks*process.hgcaltbshower)
 elif (options.chainSequence == 5):
     process.hgcaltbrechits.doCommonMode=False
-    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.myhgcaltbrechitsplotter)
+    process.hgcaltbrechits.ConvertEnergyToGeV = False
+    process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbrechitsplotter_highgain_correlation_cm)
 elif (options.chainSequence == 6):
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.LayerSumAnalyzer)
 elif (options.chainSequence == 7):
@@ -185,6 +187,9 @@ elif (options.chainSequence == 8):
     process.hgcaltbtrackanalyzer.noiseEnergyThreshold = 9.0
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbcalotracks*process.hgcaltbtrackanalyzer)
 elif (options.chainSequence == 9):
+    process.hgcaltbcellefficiency.maxChi2 = 5.0
+    process.hgcaltbcellefficiency.maxDistanceToRecoTrack = 1.13
+    process.hgcaltbcellefficiency.minTouchedLayers = 6
     process.p =cms.Path(process.hgcaltbdigis*process.BadSpillFilter*process.hgcaltbrechits*process.hgcaltbclusters*process.hgcaltbcellefficiency)
 
 process.end = cms.EndPath(process.output)

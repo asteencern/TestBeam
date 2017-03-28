@@ -79,6 +79,7 @@ private:
   std::vector<double> _transverseprofile;
   std::vector<double> _clustertransverseprofile;
   std::vector<double> _energylayer;
+  std::vector<double> _lgenergylayer;
   std::vector<double> _clusterenergylayer;
   std::vector<double> _meanx;
   std::vector<double> _meany;
@@ -171,6 +172,7 @@ ShowerAnalyzer::ShowerAnalyzer(const edm::ParameterSet& iConfig) :
   tree->Branch( "transverseprofile","std::vector<double>",&_transverseprofile);
   tree->Branch( "clustertransverseprofile","std::vector<double>",&_clustertransverseprofile);
   tree->Branch( "energylayer","std::vector<double>",&_energylayer);
+  tree->Branch( "lowgainenergylayer","std::vector<double>",&_lgenergylayer);
   tree->Branch( "clusterenergylayer","std::vector<double>",&_clusterenergylayer);
   tree->Branch( "meanx","std::vector<double>",&_meanx);
   tree->Branch( "meany","std::vector<double>",&_meany);
@@ -189,6 +191,7 @@ ShowerAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup)
   _transverseprofile.clear();
   _clustertransverseprofile.clear();
   _energylayer.clear();
+  _lgenergylayer.clear();
   _clusterenergylayer.clear();
   _clustersizelayer.clear();
   _meanx.clear();
@@ -221,6 +224,7 @@ ShowerAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup)
   _energy=0;
   for( int ilayer=0; ilayer<nlayers; ilayer++){
     _energylayer.push_back(0.0);
+    _lgenergylayer.push_back(0.0);
     _meanx.push_back(0.0);
     _meany.push_back(0.0);
     _rmsx.push_back(0.0);
@@ -255,6 +259,7 @@ ShowerAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup)
       for( std::vector<HGCalTBDetId>::iterator it=track.getDetIds().begin(); it!=track.getDetIds().end(); ++it ){
 	HGCalTBRecHit hit=(*(*Rechits).find(*it));
 	_energylayer[ hit.id().layer()-1 ] += hit.energy();
+	_lgenergylayer[ hit.id().layer()-1 ] += hit.energyLow();
 	_energy+=hit.energy();
 	std::pair<double,double> xy=cellVertice.GetCellCentreCoordinatesForPlots( (*it).layer(), (*it).sensorIU(), (*it).sensorIV(), (*it).iu(), (*it).iv(), sensorSize);
 	math::XYZPoint xyz(xy.first,xy.second,layerZPosition.at( (*it).layer()-1 ));

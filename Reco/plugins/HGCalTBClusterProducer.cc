@@ -73,7 +73,7 @@ void HGCalTBClusterProducer::produce(edm::Event& event, const edm::EventSetup& i
   for(auto hit : *rechits ){
     if( hit.energy()<_minEnergy )
        continue;
-    if( _rmSpecialCells && hit.id().cellType()!=0 && hit.id().cellType()!=4 )
+    if( _rmSpecialCells && hit.id().cellType()!=0 && hit.id().cellType()!=4 && hit.id().cellType()!=1 )
       continue;
     if( hitmap.find( hit.id().layer() )!=hitmap.end() )
       hitmap[ hit.id().layer() ].push_back(hit);

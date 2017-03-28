@@ -69,17 +69,20 @@ private:
   std::vector<std::pair<double, double>> CellXY;
   std::pair<double, double> CellCentreXY;
   edm::Service<TFileService> fs;
+  unsigned int skipSpills;
 };
 
 EventDisplay::EventDisplay(const edm::ParameterSet& iConfig) :
   nlayers( iConfig.getUntrackedParameter<int>("Nlayers",8) ),
-  sensorsize( iConfig.getUntrackedParameter<int>("SensorSize",128) )
+  sensorsize( iConfig.getUntrackedParameter<int>("SensorSize",128) ),
+  skipSpills( iConfig.getUntrackedParameter<unsigned int>("skipSpills",0) )
 {
   usesResource("TFileService");
   HGCalTBClusterCollection_ = consumes<reco::HGCalTBClusterCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBCLUSTERS"));
   HGCalTBClusterCollection7_ = consumes<reco::HGCalTBClusterCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBCLUSTERS7"));
   HGCalTBClusterCollection19_ = consumes<reco::HGCalTBClusterCollection>(iConfig.getParameter<edm::InputTag>("HGCALTBCLUSTERS19"));
   _evtID = 0;
+  std::cout << iConfig.dump() << std::endl;
 }
 
 
@@ -114,7 +117,7 @@ void EventDisplay::InitTH2Poly(TH2Poly& poly, int layerID, int sensorIU, int sen
 void
 EventDisplay::analyze(const edm::Event& event, const edm::EventSetup& setup)
 {
-
+  if( event.id().luminosityBlock()<=skipSpills )return;
   edm::Handle<reco::HGCalTBClusterCollection> clusters;
   event.getByToken(HGCalTBClusterCollection_, clusters);
   edm::Handle<reco::HGCalTBClusterCollection> clusters7;
