@@ -1,4 +1,5 @@
 import os,sys
+import badSpillHelper
 from optparse import OptionParser
 
 parser = OptionParser()
@@ -55,6 +56,13 @@ cmd+=eosFile+" "+eosFile
 print eosPath, eosFile
 os.system(cmd)
 
+finder=badSpillHelper.badSpillFinder(eosFile)
+badspills=finder.Find()
+writer=badSpillHelper.badSpillWriter(options.runNumber,badspills)
+writer.Write()
+
+print "Bad Spills = ", badspills
+
 dataFolder='./'
 outputFolder='./'
 cmd=""
@@ -93,7 +101,7 @@ elif options.process == "display":
     pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
     cmd+=" pedestalsLowGain="+pedestalsLowGain
     cmd+=" pedestalsHighGain="+pedestalsHighGain
-    cmd+=" chainSequence=3 maxEvents=10"
+    cmd+=" chainSequence=3 maxEvents=50"
 elif options.process == "ntuple":
     pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
     pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
