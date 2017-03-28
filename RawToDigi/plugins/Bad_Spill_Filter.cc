@@ -64,8 +64,8 @@ class Bad_Spill_Filter : public edm::stream::EDFilter<> {
 
       std::array< std::vector <int> , Num_BAD_RUNS_CFG> Bad_Run_Spill_Array;
 	FILE* m_file;
-	string name_CFG1 = "Bad_Run_Spill_CFG1.txt";
-	string name_CFG2 = "Bad_Run_Spill_CFG2.txt";
+	string name_CFG1 = "bad_spill.txt";
+	string name_CFG2 = "bad_spill.txt";
       //virtual void beginRun(edm::Run const&, edm::EventSetup const&) override;
       //virtual void endRun(edm::Run const&, edm::EventSetup const&) override;
       //virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
