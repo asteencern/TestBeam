@@ -14,7 +14,7 @@ parser.add_option("-n", "--runNumber", dest="runNumber",type="int",
 parser.add_option("-t", "--runType", dest="runType",choices=["HGCRun","PED"],
                   help="run type",default="HGCRun")
 
-parser.add_option("-p", "--process", dest="process",choices=["reco", "pedestal", "tracking","display","ntuple"],
+parser.add_option("-p", "--process", dest="process",choices=["reco", "pedestal", "tracking", "rechitplotter","display","ntuple","efficiency"],
                   help="process to run",default="pedestal")
 
 parser.add_option("-s", "--nSpills", dest="nSpills",type="int",
@@ -32,13 +32,16 @@ parser.add_option("-C", "--pedestalPath", dest="pedestalPath",
 parser.add_option("-S", "--saveOnEos", dest="saveOnEos", type="int",
                   help="bool to set to save output on eps", default=1)
 
+# parser.add_option("-e", "--nEvents", dest="nEvents",type="int",
+#                   help="number of events to run", default=-1)
+
 (options, args) = parser.parse_args()
 
 print options
 
 # example :
 #
-#  python run.py --runType=HGCRun --process=ntuple --runNumber=1312 --nSpills=15 --configuration=2 --pedestalRun=1200 --pedestalPath=./
+#  python runNewEB.py --runType=HGCRun --process=tracking --runNumber=1312 --nSpills=15 --configuration=2 --pedestalRun=1200 --pedestalPath=./
 #
 # 
 
@@ -63,7 +66,7 @@ print "Bad Spills = ", badspills
 dataFolder='./'
 outputFolder='./'
 cmd=""
-cmd="eval `scramv1 runtime -sh`;cmsRun cmssw_cfg.py"
+cmd="eval `scramv1 runtime -sh`;cmsRun myTest_cfg.py"
 cmd+=" runNumber="+str(options.runNumber)+" nSpills="+str(options.nSpills)
 cmd+=" dataFolder="+dataFolder
 cmd+=" outputFolder="+outputFolder
@@ -75,30 +78,60 @@ if options.process == "pedestal":
     cmd+=" pedestalsLowGain="+pedestalsLowGain
     cmd+=" pedestalsHighGain="+pedestalsHighGain
     cmd+=" chainSequence=1"
-elif options.process == "ntuple":
-    pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
-    pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
-    cmd+=" pedestalsLowGain="+pedestalsLowGain
-    cmd+=" pedestalsHighGain="+pedestalsHighGain
-    cmd+=" chainSequence=2"
-elif options.process == "display":
-    pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
-    pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
-    cmd+=" pedestalsLowGain="+pedestalsLowGain
-    cmd+=" pedestalsHighGain="+pedestalsHighGain
-    cmd+=" chainSequence=3"
-elif options.process == "tracking":
-    pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
-    pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
-    cmd+=" pedestalsLowGain="+pedestalsLowGain
-    cmd+=" pedestalsHighGain="+pedestalsHighGain
-    cmd+=" chainSequence=6"
-elif options.process == "reco":
+elif options.process == "rechitplotter":
     pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
     pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
     cmd+=" pedestalsLowGain="+pedestalsLowGain
     cmd+=" pedestalsHighGain="+pedestalsHighGain
     cmd+=" chainSequence=5"
+elif options.process == "reco":
+    pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
+    pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
+    cmd+=" pedestalsLowGain="+pedestalsLowGain
+    cmd+=" pedestalsHighGain="+pedestalsHighGain
+    cmd+=" chainSequence=4"
+elif options.process == "tracking":
+    pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
+    pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
+    cmd+=" pedestalsLowGain="+pedestalsLowGain
+    cmd+=" pedestalsHighGain="+pedestalsHighGain
+    cmd+=" chainSequence=8"
+elif options.process == "display":
+    pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
+    pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
+    cmd+=" pedestalsLowGain="+pedestalsLowGain
+    cmd+=" pedestalsHighGain="+pedestalsHighGain
+    cmd+=" chainSequence=3 maxEvents=50"
+elif options.process == "ntuple":
+    pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
+    pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
+    cmd+=" pedestalsLowGain="+pedestalsLowGain
+    cmd+=" pedestalsHighGain="+pedestalsHighGain
+    cmd+=" chainSequence=7"
+elif options.process == "efficiency":
+    pedestalsLowGain=options.pedestalPath+"pedLowGain"+str(options.pedestalRun)+".txt"
+    pedestalsHighGain=options.pedestalPath+"pedHighGain"+str(options.pedestalRun)+".txt"
+    cmd+=" pedestalsLowGain="+pedestalsLowGain
+    cmd+=" pedestalsHighGain="+pedestalsHighGain
+    cmd+=" chainSequence=9"
 
 print cmd
 os.system(cmd)
+os.system("rm "+eosFile)
+
+if options.process == "tracking" and options.saveOnEos==1:
+    os.system("")
+    eosOutputFile="%s_Output_%06d.root"%(options.runType,options.runNumber)
+    os.system("source /afs/cern.ch/project/eos/installation/user/etc/setup.sh; xrdcp -f Output.root root://eosuser.cern.ch//eos/user/a/asteen/hgcal/data/sep2016/tracking-reco/"+eosOutputFile)
+if options.process == "reco" and options.saveOnEos==1:
+    os.system("")
+    eosOutputFile="%s_Output_%06d.root"%(options.runType,options.runNumber)
+    os.system("source /afs/cern.ch/project/eos/installation/user/etc/setup.sh; xrdcp -f Output.root root://eosuser.cern.ch//eos/user/a/asteen/hgcal/data/sep2016/shower-reco/"+eosOutputFile)
+if options.process == "rechitplotter" and options.saveOnEos==1:
+    os.system("")
+    eosOutputFile="%s_Output_%06d.root"%(options.runType,options.runNumber)
+    os.system("source /afs/cern.ch/project/eos/installation/user/etc/setup.sh; xrdcp -f Output.root root://eosuser.cern.ch//eos/user/a/asteen/hgcal/data/sep2016/rechitplotter/"+eosOutputFile)
+if options.process == "efficiency" and options.saveOnEos==1:
+    os.system("")
+    eosOutputFile="%s_Output_%06d.root"%(options.runType,options.runNumber)
+    os.system("source /afs/cern.ch/project/eos/installation/user/etc/setup.sh; xrdcp -f Output.root root://eosuser.cern.ch//eos/user/a/asteen/hgcal/data/sep2016/efficiency/"+eosOutputFile)
