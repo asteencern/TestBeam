@@ -18,7 +18,7 @@ options.register('runNumber',
                  'Input run to process')
 
 options.register('outputFolder',
-                 '/afs/cern.ch/work/r/rchatter/TestBeam_July_Fix/CMSSW_8_0_21/src/HGCal/',
+                 './',
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.string,
                  'Output folder where analysis output are stored')
@@ -45,21 +45,15 @@ options.register('hgcalLayout',
 # "HGCal/CondObjects/data/layerGeom_oct2017_h6_20layers.txt"
 
 options.maxEvents = -1
-options.output = "cmsswEvents.root"
+options.output = "cmsswEvents_Cluster.root"
 
 options.parseArguments()
 print options
 if not os.path.isdir(options.dataFolder):
     sys.exit("Error: Data folder not found or inaccessible!")
 
-
-
-pedestalHighGain="pedestalHG_"+str(options.runNumber)+".txt"
-pedestalLowGain="pedestalLG_"+str(options.runNumber)+".txt"
-noisyChannels="noisyChannels_"+str(options.runNumber)+".txt"
-
 ################################
-process = cms.Process("rawhitprod")
+process = cms.Process("rechitanalysis")
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(options.maxEvents)
 )
@@ -67,7 +61,7 @@ process.maxEvents = cms.untracked.PSet(
 ####################################
 
 process.source = cms.Source("PoolSource",
-                            fileNames=cms.untracked.vstring("file:%s/cmsswEvents_Run%d.root"%(options.dataFolder,options.runNumber))
+                            fileNames=cms.untracked.vstring("file:%s/cmsswEvents_Run%d_RecHit.root"%(options.dataFolder,options.runNumber))
 )
 
 filename = options.outputFolder+"/HexaOutput_"+str(options.runNumber)+".root"
@@ -77,35 +71,47 @@ process.TFileService = cms.Service("TFileService",
 process.output = cms.OutputModule("PoolOutputModule",
                                   fileName = cms.untracked.string(options.output),
                                   outputCommands = cms.untracked.vstring('drop *',
-                                                                         'keep *_*_HGCALTBRAWHITS_*')
+                                                                         'keep *_*_HGCALTBRECHITS_*',
+                                                                         'keep *_*_HGCALTBCLUSTERS_*',
+                                                                         'keep *_*_HGCALTBCLUSTERS7_*',
+                                                                         'keep *_*_HGCALTBCLUSTERS19_*',
+                                  )
 )
 
-process.rawhitproducer = cms.EDProducer("HGCalTBRawHitProducer",
-                                        InputCollection=cms.InputTag("source","skiroc2cmsdata"),
-                                        OutputCollectionName=cms.string("HGCALTBRAWHITS"),
-                                        ElectronicMap=cms.untracked.string(options.electronicMap),
-                                        SubtractPedestal=cms.untracked.bool(True),
-                                        MaskNoisyChannels=cms.untracked.bool(True),
-                                        HighGainPedestalFileName=cms.untracked.string(pedestalHighGain),
-                                        LowGainPedestalFileName=cms.untracked.string(pedestalLowGain),
-                                        ChannelsToMaskFileName=cms.untracked.string(noisyChannels)
+process.clusterproducer = cms.EDProducer("HGCalTBClusterProducer",
+                                        OutputCollectionName = cms.string('HGCALTBCLUSTERS'),
+                                        InputCollection = cms.InputTag('rechitproducer','HGCALTBRECHITS'),
+                                        ElectronicsMap = cms.untracked.string(options.electronicMap),
+                                        DetectorLayout=cms.untracked.string(options.hgcalLayout),
+                                        SensorSize=cms.untracked.int32(128),
+                                        runDynamicCluster = cms.untracked.bool(True),
+                                        runCluster7 = cms.untracked.bool(True),
+                                        runCluster19 = cms.untracked.bool(True),
+                                        minEnergy = cms.untracked.double(2.0),
+
 )
 
-process.rawhitplotter = cms.EDAnalyzer("RawHitPlotter",
-                                       InputCollection=cms.InputTag("rawhitproducer","HGCALTBRAWHITS"),
+process.rechitplotter = cms.EDAnalyzer("RecHitPlotter",
+                                       InputCollection=cms.InputTag("rechitproducer","HGCALTBRECHITS"),
                                        ElectronicMap=cms.untracked.string(options.electronicMap),
                                        DetectorLayout=cms.untracked.string(options.hgcalLayout),
                                        SensorSize=cms.untracked.int32(128),
-                                       EventPlotter=cms.untracked.bool(False),
-                                       SubtractCommonMode=cms.untracked.bool(True)
+                                       EventPlotter=cms.untracked.bool(True),
+                                       MipThreshold=cms.untracked.double(5.0),
+                                       NoiseThreshold=cms.untracked.double(2.0)
 )
 
-process.pulseshapeplotter = cms.EDAnalyzer("PulseShapePlotter",
-                                           InputCollection=cms.InputTag("rawhitproducer","HGCALTBRAWHITS"),
-                                           ElectronicMap=cms.untracked.string(options.electronicMap)
+process.showeranalyzer = cms.EDAnalyzer("ShowerAnalyzer",
+                                       InputCollection=cms.InputTag("rechitproducer","HGCALTBRECHITS"),
+                                       InputClusterCollection=cms.InputTag("clusterproducer","HGCALTBCLUSTERS"),
+                                       InputCluster7Collection=cms.InputTag("clusterproducer","HGCALTBCLUSTERS7"),
+                                       InputCluster19Collection=cms.InputTag("clusterproducer","HGCALTBCLUSTERS19"),
+                                       DetectorLayout=cms.untracked.string(options.hgcalLayout),
+                                       SensorSize=cms.untracked.int32(128),
+                                       NoiseThreshold=cms.untracked.double(2.0)
 )
 
 
-process.p = cms.Path( process.rawhitproducer*process.rawhitplotter )
+process.p = cms.Path( process.clusterproducer*process.showeranalyzer )
 
 process.end = cms.EndPath(process.output)
