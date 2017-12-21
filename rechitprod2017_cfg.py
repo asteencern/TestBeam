@@ -103,6 +103,7 @@ process.showeranalyzer = cms.EDAnalyzer("ShowerAnalyzer",
                                        NoiseThreshold=cms.untracked.double(0.5)
 )
 
-process.p = cms.Path( process.rechitproducer*process.showeranalyzer )
+process.p = cms.Path( process.rechitproducer*process.pulseshapeplotter*process.rechitplotter )
+#process.p = cms.Path( process.rechitproducer*process.showeranalyzer )
 
 process.end = cms.EndPath(process.output)

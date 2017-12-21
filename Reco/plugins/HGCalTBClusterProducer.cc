@@ -119,6 +119,8 @@ void HGCalTBClusterProducer::createDynamicClusters(HGCalTBRecHitCollection rechi
     float energy=0.;
     float x,y,z;
     x = y = z = 0.0;
+    HGCalTBDetId seedId=(*clusterDetIDs.begin());
+    HGCalTBRecHit seed=(*rechits.find(seedId));
     for( std::vector<HGCalTBDetId>::iterator jt=clusterDetIDs.begin(); jt!=clusterDetIDs.end(); ++jt){
       HGCalTBRecHit hit=(*rechits.find(*jt));
       energyHigh+=hit.energyHigh();
@@ -128,11 +130,16 @@ void HGCalTBClusterProducer::createDynamicClusters(HGCalTBRecHitCollection rechi
       x += CellCentreXY.first*hit.energy();
       y += CellCentreXY.second*hit.energy();
       z += m_essource.layout.at( hit.id().layer()-1 ).z()*hit.energy();
-    } 
+      if( seed.energy()<hit.energy() ){
+	seed=hit;
+	seedId=(*jt);
+      }
+    }
     cluster.setPosition( math::XYZPoint(x,y,z)/energy );
     cluster.setEnergyLow(energyLow);
     cluster.setEnergyHigh(energyHigh);
     cluster.setEnergy(energy);
+    cluster.setSeed(seedId);
     for( std::vector<HGCalTBDetId>::iterator jt=clusterDetIDs.begin(); jt!=clusterDetIDs.end(); ++jt)
       cluster.addHitAndFraction( (*jt), (*rechits.find(*jt)).energy()/energy );
   

@@ -87,8 +87,18 @@ process.clusterproducer = cms.EDProducer("HGCalTBClusterProducer",
                                         runDynamicCluster = cms.untracked.bool(True),
                                         runCluster7 = cms.untracked.bool(True),
                                         runCluster19 = cms.untracked.bool(True),
-                                        minEnergy = cms.untracked.double(2.0),
+                                        minEnergy = cms.untracked.double(0.25),
 
+)
+
+process.calotrackproducer = cms.EDProducer("HGCalTBCaloTrackProducer",
+                                           OutputCollectionName = cms.string('HGCALTBTRACKS'),
+                                           HGCALTBCLUSTERS = cms.InputTag("clusterproducer","HGCALTBCLUSTERS","" ),
+                                           doTrackCleaning = cms.untracked.bool( True ),
+                                           maxDistanceToRecoTrack = cms.untracked.double( 2.0 ),
+                                           minTouchedLayers = cms.untracked.int32( 3 ),
+                                           minEnergy = cms.untracked.double(0.25),
+                                           maxEnergy = cms.untracked.double(4.0)
 )
 
 process.rechitplotter = cms.EDAnalyzer("RecHitPlotter",
@@ -97,7 +107,6 @@ process.rechitplotter = cms.EDAnalyzer("RecHitPlotter",
                                        DetectorLayout=cms.untracked.string(options.hgcalLayout),
                                        SensorSize=cms.untracked.int32(128),
                                        EventPlotter=cms.untracked.bool(True),
-                                       MipThreshold=cms.untracked.double(5.0),
                                        NoiseThreshold=cms.untracked.double(2.0)
 )
 
@@ -112,6 +121,6 @@ process.showeranalyzer = cms.EDAnalyzer("ShowerAnalyzer",
 )
 
 
-process.p = cms.Path( process.clusterproducer*process.showeranalyzer )
+process.p = cms.Path( process.clusterproducer*process.calotrackproducer )
 
 process.end = cms.EndPath(process.output)

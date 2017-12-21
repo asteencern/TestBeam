@@ -148,7 +148,7 @@ void RecHitPlotter::analyze(const edm::Event& event, const edm::EventSetup& setu
   float energyHighSum(0),energyLowSum(0),energySum(0);
   for( auto hit : *hits ){
     HGCalTBElectronicsId eid( essource_.emap_.detId2eid( hit.id().rawId() ) );
-    if( hit.energy()>m_noiseThreshold && !hit.isUnderSaturationForLowGain() && !hit.isUnderSaturationForHighGain() && hit.id().cellType()!=5 ){
+    if( hit.energy()>m_noiseThreshold && !hit.isUnderSaturationForLowGain() && !hit.isUnderSaturationForHighGain() && hit.id().cellType()!=10 ){
       energyHighSum+=hit.energyHigh();
       energyLowSum+=hit.energyLow();
       energySum+=hit.energy();

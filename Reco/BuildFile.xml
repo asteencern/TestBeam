@@ -6,6 +6,7 @@
 <use name="Alignment/ReferenceTrajectories"/>
 <use name="Alignment/MillePedeAlignmentAlgorithm"/>
 <use name="DataFormats/CaloRecHit"/>
+<use name="eigen"/>
 <export>
    <lib name="1"/>
 </export>
